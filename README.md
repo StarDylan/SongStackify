@@ -1,4 +1,4 @@
-# SetListify
+# SongStackify
 ## Project Proposal
 Our project, SetListify, will allow users to create playlists, share playlist with other users of their choice, and fork playlists from other users.
 
