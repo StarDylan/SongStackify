@@ -127,7 +127,7 @@ Create a new playlist
 ]
 ```
 
-## Add Songs to Playlist - `/playlist/{playlist_id}/songs/add`
+## Add Songs to Playlist - `/playlist/{playlist_id}/songs/add` (POST)
 
 Adds a song to the end of the playlist.
 
