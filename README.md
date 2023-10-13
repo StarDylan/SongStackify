@@ -1,6 +1,6 @@
 # SongStackify
 ## Project Proposal
-Our project, SetListify, will allow users to create playlists, share playlist with other users of their choice, and fork playlists from other users.
+SongStackify™ is the next-generation of music players. SongStackify™ will allow users to create playlists, share playlist with other users of their choice, and fork playlists from other users.
 
 The system collects crowd-sourced song information
 
