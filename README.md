@@ -2,7 +2,7 @@
 ## Project Proposal
 SongStackify™ is the cutting-edge, cross-platform music player that empowers users to effortlessly and seamlessly create and share personalized playlists.
 
-Leveraging crowd-sourced song information, users can explore an extensive music library, and take part in the vibrant msuci community, amplifying their overall music exploration journey. 
+Leveraging crowd-sourced song information, users can explore an extensive music library, and take part in the vibrant music community, amplifying their overall music exploration journey. 
 
 With seamless playback controls, including skipping, shuffling, and resuming from where users left off, SongStackify™ guarantees uninterrupted music enjoyment across various devices and operating systems.
 
