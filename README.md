@@ -1,12 +1,13 @@
-# SongStackify
+# SongStackify™ - Redefining Music Streaming
 ## Project Proposal
-Our project, SetListify, will allow users to create playlists, share playlist with other users of their choice, and fork playlists from other users.
+SongStackify™ is the cutting-edge, cross-platform music player that empowers users to effortlessly and seamlessly create and share personalized playlists.
 
-The system collects crowd-sourced song information
+Leveraging crowd-sourced song information, users can explore an extensive music library, and take part in the vibrant music community, amplifying their overall music exploration journey. 
 
-Users can play songs in a playlist and skip forwards or backwards, shuffle, and repeat.
+With seamless playback controls, including skipping, shuffling, and resuming from where users left off, SongStackify™ guarantees uninterrupted music enjoyment across various devices and operating systems.
 
-When users stop playing songs from a playlist, the system will allow users to pick up from where they left off.
+Our mission is to revolutionize music streaming by prioritizing open-source development, ensuring transparency and community-driven innovation. With a strong emphasis on user privacy, we aim to foster a dynamic and interconnected community for music enthusiasts worldwide, guaranteeing a secure and personalized music experience.
+
 ## Project Members:
 #### Matthew Wong - mwong205@calpoly.edu
 #### Dylan Starink - dstarink@calpoly.edu
