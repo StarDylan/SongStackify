@@ -14,7 +14,9 @@ Rian listens to indie music, if you didn’t know.
 
 
 ## Existing User wants to Make a Playlist, Add Songs, and Play it
-Rebecka, a SongStackify™ veteran, wants to create a playlist so she can add all her songs from Youtube and Spotify into one playlist on SongStackify. She is tired of switching back and forth on both platforms when she wants to hear songs exclusively on one or the other. It is currently a rainly, dark day and all she wants to do it play her songs and sleep in peace. First, Rebecka starts by creating a playlist by calling POST/playlist/create and passes in a name for her playlist which she calls “sad :( ” to get a playlist_id of 777. 
+Rebecka, a SongStackify™ veteran, wants to create a playlist so she can add all her songs from Youtube and Spotify into one playlist on SongStackify. She is tired of switching back and forth on both platforms when she wants to hear songs exclusively on one or the other. It is currently a rainly, dark day and all she wants to do it play her songs and sleep in peace. 
+
+- First, Rebecka starts by creating a playlist by calling POST/playlist/create and passes in a name for her playlist which she calls “sad :( ” to get a playlist_id of 777. 
 
 As a frequent SongStackify™ user, Rebecka has all the song_ids she wants to add to this playlist already in her mind ready to go. The songs she wants to add are “The Funeral” by Band of Horses from Spotify with a song_id of 294 and “Sad Lofi Songs 2023” by Pain from Youtube with a song_id of 983. 
 To add her songs she:
@@ -33,6 +35,6 @@ Raleigh, a music executive, decides to use SongStackify™ to publish his compan
 
 After publishing, he is overwhelmed by backlash on the platform X, formerly known as Twitter. The community was upset that the song uses futuristic and experimental sound, which undermines traditional music values. He decides he must pull the song. In order to do so, he must:
 
-- Call POST /song/{song_id}/ with the authorization key he received when he created the song and the song id in order to remove the song
+- Call POST /song/{song_id}/remove/ with the authorization key he received when he created the song and the song id in order to remove the song
 
 With the song removed and the community content, Raleigh decides to move past “Echos of Tomorrow” and get ready for his next song release.
