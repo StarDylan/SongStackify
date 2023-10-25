@@ -39,14 +39,6 @@ Remove song from the song library.
     }
 ]
 ```
-
-**Response**:
-
-```json
-{
-    "success": "boolean"
-}
-```
 ## Play Song - `/song/{song_id}/play` (GET)
 
 Returns a URL to play the given song corespronging to the song_id
@@ -84,25 +76,9 @@ Sets the user’s preferred streaming platform. Requires USER_ID Header to be se
 }
 ```
 
-**Returns**:
-
-```json
-{
-    "success": "boolean"
-}
-```
-
 ## Permanently Delete User - `/users/delete/{user_id}` (POST)
 
 Permanently deletes users. Under GDPR and CCPA regulations, this allows the user to withdraw their consent for us to store their data.
-
-**Returns**:
-
-```json
-{
-    "success":"boolean"
-}
-```
 
 ## Create Playlist - `/playlist/create` (POST)
 
