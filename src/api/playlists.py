@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Header
 from pydantic import BaseModel
 
 from src.api.models import SongPlayLink
@@ -28,7 +28,7 @@ def add_song_to_playlist(playlist_id: int, song: Song):
     raise NotImplementedError()
 
 @router.get("/{playlist_id}/play")
-def play_playlist(playlist_id: int) -> SongPlayLink:
+def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongPlayLink:
     """ """
     raise NotImplementedError()
 
