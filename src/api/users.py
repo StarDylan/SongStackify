@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Header
+from fastapi import APIRouter
 from pydantic import BaseModel
+import sqlalchemy
+from src import database as db
 
 router = APIRouter(
     prefix="/users",
@@ -13,7 +15,11 @@ class UserIdResponse(BaseModel):
 @router.post("/create")
 def create_user() -> UserIdResponse:
     """ """
-    raise NotImplementedError()
+    with db.engine.begin() as connection:
+        user_result = connection.execute(sqlalchemy.text("INSERT INTO users\
+                                           DEFAULT VALUES\
+                                           RETURNING id")).one()
+    return user_result.id
 
 class Platform(BaseModel):
     platform: str
@@ -22,12 +28,12 @@ class Platform(BaseModel):
     link: str
 
 @router.post("/platform")
-def set_platform(song_id: int, platform: Platform, user_id: str = Header(None)):
+def set_platform(song_id: int, platform: Platform):
     """ """
     raise NotImplementedError()
 
 @router.post("/delete/{user_id}")
-def delete_user(user_id: int):
+def play_song(user_id: int):
     """ """
     raise NotImplementedError()
 
