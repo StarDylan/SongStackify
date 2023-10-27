@@ -1,4 +1,3 @@
-from typing import Annotated
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
 
@@ -23,7 +22,7 @@ class Platform(BaseModel):
     link: str
 
 @router.post("/platform")
-def set_platform(song_id: int, platform: Platform, user_id: Annotated[str | None, Header()]):
+def set_platform(song_id: int, platform: Platform, user_id: str = Header(None)):
     """ """
     raise NotImplementedError()
 
