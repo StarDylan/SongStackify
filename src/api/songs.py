@@ -1,4 +1,3 @@
-from typing import Annotated
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
 import sqlalchemy
@@ -37,7 +36,7 @@ def remove_song(song_id: int, authorization: SongAuthorization):
 
 
 @router.get("/{song_id}/play")
-def play_song(song_id: int, user_id: Annotated[str | None, Header()]) -> SongPlayLink:
+def play_song(song_id: int, user_id: str = Header(None)) -> SongPlayLink:
     """ """
     with db.engine.begin() as conn:
         query = conn.execute(sqlalchemy.text("""
