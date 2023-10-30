@@ -34,7 +34,7 @@ class Platform(BaseModel):
 def set_platform(user_id: int, password: str, platform: Platform):
     """ """
     with db.engine.begin() as connection:
-        user_result = connection.execute(sqlalchemy.text("""UPDATE users
+        connection.execute(sqlalchemy.text("""UPDATE users
         SET platform_id = sq.sel_platform
         FROM
         (SELECT id as sel_platform
@@ -51,7 +51,7 @@ def set_platform(user_id: int, password: str, platform: Platform):
 def delete_user(user_id: int, password: str):
     """ """
     with db.engine.begin() as connection:
-        user_result = connection.execute(sqlalchemy.text(
+        connection.execute(sqlalchemy.text(
             """DELETE
                 FROM users
                 WHERE id=:user_id AND password=:password
