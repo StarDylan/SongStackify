@@ -31,11 +31,22 @@ class Platform(BaseModel):
     link: str
 
 @router.post("/platform")
-def set_platform(song_id: int, platform: Platform):
+def set_platform(user_id: int, password: str, platform: Platform):
     """ """
-
-    raise NotImplementedError()
-
+    with db.engine.begin() as connection:
+        user_result = connection.execute(sqlalchemy.text("""UPDATE users
+        SET platform_id = sq.sel_platform
+        FROM
+        (SELECT id as sel_platform
+            FROM platforms
+            WHERE platform_name=:platform) as sq
+        WHERE id=:user_id AND password=:password"""),
+        [{
+            "user_id":user_id,
+            "password":password,
+            "platform":platform
+        }])
+    
 @router.post("/delete/{user_id}")
 def delete_user(user_id: int, password: str):
     """ """

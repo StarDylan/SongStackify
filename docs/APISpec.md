@@ -80,6 +80,8 @@ Sets the user’s preferred streaming platform. Requires USER_ID Header to be se
 
 ```json
 {
+    "user_id": "int",
+    "password": "string",
     "platform": "string" /* Streaming platform of choice (Spotify, Apple, etc.) */
 }
 ```
