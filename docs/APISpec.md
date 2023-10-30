@@ -55,6 +55,14 @@ Returns a URL to play the given song corespronging to the song_id
 
 Creates a new user and returns their identifier. The client should send this in a header with every succeeding request.
 
+**Request**:
+
+```json
+{
+  "password": "string"
+}
+```
+
 **Return**:
 
 ```json
@@ -77,6 +85,16 @@ Sets the user’s preferred streaming platform. Requires USER_ID Header to be se
 ```
 
 ## Permanently Delete User - `/users/delete/{user_id}` (POST)
+**Request**:
+
+```json
+[
+  {
+    "user_id": "int",
+    "password": "string",
+  }
+]
+```
 
 Permanently deletes users. Under GDPR and CCPA regulations, this allows the user to withdraw their consent for us to store their data.
 
