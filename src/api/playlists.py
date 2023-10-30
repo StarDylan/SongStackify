@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
-from src import database as db
 import sqlalchemy
 from src.api.models import SongPlayLink
+import src.database as db 
 
 router = APIRouter(
     prefix="/playlist",
@@ -18,7 +18,16 @@ class PlaylistIdResponse(BaseModel):
 @router.post("/create")
 def create_playlist(new_playlist: CreatePlaylist) -> PlaylistIdResponse:
     """ """
-    raise NotImplementedError()
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("""
+                                        INSERT INTO playlists (name)
+                                        VALUES (:playlist_name)
+                                        RETURNING id
+                                        """),
+                                    [{
+                                        "playlist_name": new_playlist.playlist_name
+                                    }]).one()
+    return PlaylistIdResponse(playlist_id=result.id)
 
 class Song(BaseModel):
     song_id: str
