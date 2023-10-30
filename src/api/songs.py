@@ -23,7 +23,34 @@ class AddSongResponse(BaseModel):
 @router.post("/add")
 def add_song(add_song: AddSong) -> AddSongResponse:
     """ """
-    raise NotImplementedError()
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("""
+                                        INSERT INTO songs (song_name, album, artist)
+                                        VALUES (:name, :album, :artist)
+                                        RETURNING authorization_key, id
+                                        """),
+                                    [{
+                                        "name": add_song.name,
+                                        "album": add_song.album,
+                                        "artist": add_song.artist
+                                    }]).one()
+        connection.execute(sqlalchemy.text("""
+                                        INSERT INTO links (song_id,song_url, platform_id)
+                                        VALUES (:song_id, :song_url,
+                                            (
+                                            SELECT platforms.id
+                                            FROM platforms
+                                            WHERE :url LIKE platforms.platform_url
+                                            ))
+                                        """),
+                                    [{
+                                        "song_id": result.id,
+                                        "song_url": add_song.link,
+                                        "url": add_song.link 
+                                    }])
+        
+        return AddSongResponse(authorization_key=result.authorization_key, song_id=result.id)
+    
 
 
 class SongAuthorization(BaseModel):
@@ -32,7 +59,31 @@ class SongAuthorization(BaseModel):
 @router.post("/{song_id}/remove")
 def remove_song(song_id: int, authorization: SongAuthorization):
     """ """
-    raise NotImplementedError()
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("""
+                                        SELECT authorization_key
+                                        FROM songs
+                                        WHERE id = :song_id
+                                        """),
+                                    [{
+                                        "song_id": song_id
+                                    }]).scalar_one_or_none()
+        
+        if result is None:
+            return "Invalid song ID"
+        
+        if result != authorization.authorization_key:
+            return "Invalid authorization key"
+        
+        result = connection.execute(sqlalchemy.text("""
+                                        DELETE FROM songs
+                                        WHERE id = :song_id
+                                        """),
+                                    [{
+                                        "song_id": song_id
+                                    }])
+    
+    return "Song Removed"
 
 
 @router.get("/{song_id}/play")
