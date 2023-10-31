@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
 import sqlalchemy
-
 from src.api.models import SongPlayLink
 import src.database as db 
 
@@ -36,10 +35,19 @@ class Song(BaseModel):
 @router.post("/{playlist_id}/songs/add")
 def add_song_to_playlist(playlist_id: int, song: Song):
     """ """
-    raise NotImplementedError()
+    with db.engine.begin() as connection:
+        connection.execute(sqlalchemy.text(
+            """INSERT INTO playlist_songs(playlist_id, song_id)
+            VALUES (:playlist_id, :song_id)"""),
+        [{
+            "playlist_id":playlist_id,
+            "song_id":song
+        }]
+        )
 
 @router.get("/{playlist_id}/play")
 def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongPlayLink:
     """ """
+    
     raise NotImplementedError()
 
