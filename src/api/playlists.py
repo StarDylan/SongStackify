@@ -36,7 +36,7 @@ class Song(BaseModel):
 def add_song_to_playlist(playlist_id: int, song: Song):
     """ """
     with db.engine.begin() as connection:
-        user_result = connection.execute(sqlalchemy.text(
+        connection.execute(sqlalchemy.text(
             """INSERT INTO playlist_songs(playlist_id, song_id)
             VALUES (:playlist_id, :song_id)"""),
         [{
