@@ -30,7 +30,7 @@ def create_playlist(new_playlist: CreatePlaylist) -> PlaylistIdResponse:
     return PlaylistIdResponse(playlist_id=result.id)
 
 class Song(BaseModel):
-    song_id: str
+    song_id: int
 
 @router.post("/{playlist_id}/songs/add")
 def add_song_to_playlist(playlist_id: int, song: Song):
@@ -41,7 +41,7 @@ def add_song_to_playlist(playlist_id: int, song: Song):
             VALUES (:playlist_id, :song_id)"""),
         [{
             "playlist_id":playlist_id,
-            "song_id":song
+            "song_id":song.song_id
         }]
         )
 
