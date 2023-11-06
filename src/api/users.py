@@ -56,7 +56,7 @@ def set_platform(user_id: int, password: str, platform: Platform):
         [{
             "user_id":user_id
         }]
-        ).one()
+        ).scalar_one()
         hashed = hashPassword(password, salt_rsp)
 
         connection.execute(sqlalchemy.text("""UPDATE users
@@ -86,7 +86,7 @@ def delete_user(user_id: int, password: str):
         [{
             "user_id":user_id
         }]
-        ).one()
+        ).scalar_one()
         hashed = hashPassword(password, salt_rsp)
 
         connection.execute(sqlalchemy.text(
