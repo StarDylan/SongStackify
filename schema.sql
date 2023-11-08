@@ -61,11 +61,30 @@ create table
   INSERT INTO songs (song_name, artist, album)
   VALUES ('Mr. Brightside', 'The Killers', 'Hot Fuss');
 
-  INSERT INTO platforms (platform_name, platform_url)
-  VALUES ('Spotify', 'open.spotify.com');
+  
+  INSERT INTO songs (song_name, artist, album, id)
+  VALUES ('The Funeral', 'Band of Horses', 'Single', 294);
+  
+  INSERT INTO songs (song_name, artist, album, id)
+  VALUES ('Sad Lofi Songs 2023', 'Pain', 'Single', 983);
+
+  INSERT INTO platforms (id, platform_name, platform_url)
+  VALUES (1, 'Spotify', '%open.spotify.com%');
+  
+  INSERT INTO platforms (id, platform_name, platform_url)
+  VALUES (2, 'Apple', '%music.apple.com%');
 
   INSERT INTO links (song_id, platform_id, song_url)
   VALUES (1, 1, 'https://open.spotify.com/track/003vvx7Niy0yvhvHt4a68B?si=095e444ca83840c7');
+
+  INSERT INTO links (song_id, platform_id, song_url)
+  VALUES (294, 1, 'https://open.spotify.com/track/5lRzWDEe7UuedU2QPsFg0K');
+
+  INSERT INTO links (song_id, platform_id, song_url)
+  VALUES (983, 1, 'https://open.spotify.com/playlist/6S0eWfvBCCdxLgkKd9VHGO7');
+
+  INSERT INTO users (id, platform_id)
+  VALUES (1,1);
 
   INSERT INTO playlists (name)
   VALUES ('My Amazing Playlist');
