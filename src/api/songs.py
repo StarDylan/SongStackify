@@ -52,6 +52,44 @@ def add_song(add_song: AddSong) -> AddSongResponse:
         return AddSongResponse(authorization_key=result.authorization_key, song_id=result.id)
     
 
+class AddSongLink(BaseModel):
+    song_id: int
+    link: str
+
+
+@router.post("/link/add")
+def add_link(add_song: AddSongLink):
+    """ """
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("""
+                                        SELECT * FROM songs
+                                        WHERE id = :song_id
+                                        """),
+                                    [{
+                                        "song_id": add_song.song_id
+                                    }]).one_or_none()
+        
+        if result is None:
+            return "Invalid song ID"
+        
+
+        connection.execute(sqlalchemy.text("""
+                                        INSERT INTO links (song_id,song_url, platform_id)
+                                        VALUES (:song_id, :song_url,
+                                            (
+                                            SELECT platforms.id
+                                            FROM platforms
+                                            WHERE :url LIKE platforms.platform_url
+                                            ))
+                                        """),
+                                    [{
+                                        "song_id": add_song.song_id,
+                                        "song_url": add_song.link,
+                                        "url": add_song.link 
+                                    }])
+        
+        return "Added Link"
+    
 
 class SongAuthorization(BaseModel):
     authorization_key: str
