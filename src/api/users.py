@@ -80,10 +80,15 @@ def delete_user(user_id: int, password: str):
         [{
             "user_id":user_id
         }]
-        ).scalar_one()
+        ).scalar_one_or_none()
+
+        if salt_rsp is None:
+            return "User does not exist"
+        
+        
         hashed = hashPassword(password, salt_rsp)
 
-        connection.execute(sqlalchemy.text(
+        result = connection.execute(sqlalchemy.text(
             """DELETE
                 FROM users
                 WHERE id=:user_id AND password=:password
@@ -93,3 +98,10 @@ def delete_user(user_id: int, password: str):
             "password":hashed
         }]
         )
+
+        if result.rowcount == 0:
+            return "Invalid password"
+    
+    return "User deleted"
+
+
