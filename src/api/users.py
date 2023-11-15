@@ -36,14 +36,8 @@ def create_user(password: str) -> UserIdResponse:
                                            }]).one()
     return user_result.id
 
-class Platform(BaseModel):
-    platform: str
-    album: str
-    artist: str
-    link: str
-
 @router.post("/platform")
-def set_platform(user_id: int, password: str, platform: Platform):
+def set_platform(user_id: int, password: str, platform: str):
     """ """
     with db.engine.begin() as connection:
         salt_rsp = connection.execute(sqlalchemy.text(
