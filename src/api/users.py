@@ -50,10 +50,14 @@ def set_platform(user_id: int, password: str, platform: str):
         [{
             "user_id":user_id
         }]
-        ).scalar_one()
+        ).scalar_one_or_none()
+
+        if salt_rsp is None:
+            return "User does not exist"
+
         hashed = hashPassword(password, salt_rsp)
 
-        connection.execute(sqlalchemy.text("""UPDATE users
+        result = connection.execute(sqlalchemy.text("""UPDATE users
         SET platform_id = sq.sel_platform
         FROM
         (SELECT id as sel_platform
@@ -65,6 +69,13 @@ def set_platform(user_id: int, password: str, platform: str):
             "password":hashed,
             "platform":platform
         }])
+
+        if result.rowcount == 0:
+            return "Invalid password or platform"
+    
+    return "Platform set"
+
+
     
 @router.post("/delete/{user_id}")
 def delete_user(user_id: int, password: str):
