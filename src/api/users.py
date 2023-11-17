@@ -27,7 +27,7 @@ def validatePassword(user_id, password):
     hash = result.scalar_one()
     try:
         return ph.verify(hash=hash, password=password)
-    except:
+    except Exception:
         return False
 
 class PasswordRequest(BaseModel):
