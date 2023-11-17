@@ -1,10 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 import sqlalchemy
-import base64
 from src import database as db
 from argon2 import PasswordHasher
-from Crypto.Random import get_random_bytes
 
 
 ph = PasswordHasher()
