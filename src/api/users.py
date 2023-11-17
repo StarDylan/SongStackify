@@ -12,14 +12,17 @@ router = APIRouter(
     tags=["users"],
 )
 
+class PasswordRequest(BaseModel):
+    password: str
+
 class UserIdResponse(BaseModel):
     user_id: int
 
 @router.post("/create")
-def create_user(password: str) -> UserIdResponse:
+def create_user(pw: PasswordRequest) -> UserIdResponse:
     """ """
     # salt is handled by library
-    hashed = ph.hash(password)
+    hashed = ph.hash(pw.password)
     with db.engine.begin() as connection:
         user_result = connection.execute(sqlalchemy.text("INSERT INTO users(password)\
                                            VALUES (:password)\
@@ -33,9 +36,9 @@ class Platform(BaseModel):
     platform: str
 
 @router.post("/platform")
-def set_platform(user_id: int, password: str, platform: str):
+def set_platform(user_id: int, password: PasswordRequest, platform: str):
     """ """
-    hashed = ph.hash(password)
+    hashed = ph.hash(password.password)
 
     with db.engine.begin() as connection:
        
@@ -57,9 +60,9 @@ def set_platform(user_id: int, password: str, platform: str):
     return "OK"
     
 @router.post("/delete/{user_id}")
-def delete_user(user_id: int, password: str):
+def delete_user(user_id: int, password: PasswordRequest):
     """ """
-    hashed = ph.hash(password)
+    hashed = ph.hash(password.password)
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text(
             """DELETE
