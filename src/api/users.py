@@ -24,7 +24,9 @@ def validatePassword(user_id, password):
         }]
         )
 
-    hash = result.scalar_one()
+    hash = result.scalar_one_or_none()
+    if hash is None:
+        print("User doesn't exist.")
     try:
         return ph.verify(hash=hash, password=password)
     except Exception:
@@ -60,7 +62,6 @@ def set_platform(user_id: int, password: PasswordRequest, platform: str):
         return "Incorrect Password"
 
     with db.engine.begin() as connection:
-       
         connection.execute(sqlalchemy.text("""
         UPDATE users
         SET platform_id = sq.sel_platform
