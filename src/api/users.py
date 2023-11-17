@@ -12,6 +12,24 @@ router = APIRouter(
     tags=["users"],
 )
 
+def validatePassword(user_id, password):
+    with db.engine.begin() as connection:
+        result  = connection.execute(sqlalchemy.text(
+            """SELECT password
+                FROM users
+                WHERE id=:user_id
+            """),
+        [{
+            "user_id":user_id
+        }]
+        )
+
+    hash = result.scalar_one()
+    try:
+        return ph.verify(hash=hash, password=password)
+    except:
+        return False
+
 class PasswordRequest(BaseModel):
     password: str
 
@@ -38,7 +56,8 @@ class Platform(BaseModel):
 @router.post("/platform")
 def set_platform(user_id: int, password: PasswordRequest, platform: str):
     """ """
-    hashed = ph.hash(password.password)
+    if not validatePassword(user_id, password.password):
+        return "Incorrect Password"
 
     with db.engine.begin() as connection:
        
@@ -49,11 +68,10 @@ def set_platform(user_id: int, password: PasswordRequest, platform: str):
         (SELECT id as sel_platform
             FROM platforms
             WHERE platform_name=:platform) as sq
-        WHERE id=:user_id AND password=:password
+        WHERE id=:user_id
         """),
         [{
             "user_id":user_id,
-            "password":hashed,
             "platform":platform
         }])
     # error platform doesn't exist
@@ -62,15 +80,17 @@ def set_platform(user_id: int, password: PasswordRequest, platform: str):
 @router.post("/delete/{user_id}")
 def delete_user(user_id: int, password: PasswordRequest):
     """ """
-    hashed = ph.hash(password.password)
+    if not validatePassword(user_id, password.password):
+        return "Incorrect Password"
+
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text(
             """DELETE
                 FROM users
-                WHERE id=:user_id AND password=:password
+                WHERE id=:user_id
             """),
         [{
             "user_id":user_id,
-            "password":hashed
         }]
         )
+    return "OK"
