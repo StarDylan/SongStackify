@@ -50,7 +50,7 @@ def add_song(add_song: AddSong) -> AddSongResponse:
                                             "song_url": add_song.link,
                                             "url": add_song.link 
                                         }])
-        except:
+        except Exception:
             return "Link Invalid"
         
         return AddSongResponse(authorization_key=result.authorization_key, song_id=result.id)
