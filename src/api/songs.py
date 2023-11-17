@@ -34,20 +34,24 @@ def add_song(add_song: AddSong) -> AddSongResponse:
                                         "album": add_song.album,
                                         "artist": add_song.artist
                                     }]).one()
-        connection.execute(sqlalchemy.text("""
-                                        INSERT INTO links (song_id,song_url, platform_id)
-                                        VALUES (:song_id, :song_url,
-                                            (
-                                            SELECT platforms.id
-                                            FROM platforms
-                                            WHERE :url LIKE platforms.platform_url
-                                            ))
-                                        """),
-                                    [{
-                                        "song_id": result.id,
-                                        "song_url": add_song.link,
-                                        "url": add_song.link 
-                                    }])
+        # TODO error handle
+        try: 
+            connection.execute(sqlalchemy.text("""
+                                            INSERT INTO links (song_id,song_url, platform_id)
+                                            VALUES (:song_id, :song_url,
+                                                (
+                                                SELECT platforms.id
+                                                FROM platforms
+                                                WHERE :url LIKE platforms.platform_url
+                                                ))
+                                            """),
+                                        [{
+                                            "song_id": result.id,
+                                            "song_url": add_song.link,
+                                            "url": add_song.link 
+                                        }])
+        except Exception:
+            return "Link Invalid"
         
         return AddSongResponse(authorization_key=result.authorization_key, song_id=result.id)
     
