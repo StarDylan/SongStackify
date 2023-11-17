@@ -168,6 +168,14 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongPlayLink:
 
             return "Song not available on user's platform"
         
+        conn.execute(sqlalchemy.text("""
+          INSERT INTO song_history (user_id, song_id) VALUES (:user_id, :song_id)
+            """),
+            [{
+                "song_id": song_id,
+                "user_id": user_id
+            }])
+        
         return query.song_url
 
 
