@@ -75,9 +75,8 @@ def set_platform(user_id: int, password: PasswordRequest, platform: str):
             "user_id":user_id,
             "platform":platform
         }])
-
-        if result.rowcount == 0:
-            return "Invalid password or platform"
+    # error platform doesn't exist
+    return "OK"
     
 
     return "OK"
@@ -99,11 +98,6 @@ def delete_user(user_id: int, password: PasswordRequest):
 
         if salt_rsp is None:
             return "User does not exist"
-        
-        
-        hashed = hashPassword(password, salt_rsp)
-
-        result = connection.execute(sqlalchemy.text(
   
     if not validatePassword(user_id, password.password):
         return "Incorrect Password"
@@ -118,8 +112,6 @@ def delete_user(user_id: int, password: PasswordRequest):
             "user_id":user_id,
         }]
         )
-
-        if result.rowcount == 0:
-            return "Invalid password"
+        
     
     return "OK"
