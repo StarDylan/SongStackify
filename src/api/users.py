@@ -26,7 +26,7 @@ def validatePassword(user_id, password):
 
     hash = result.scalar_one_or_none()
     if hash is None:
-        print("User doesn't exist.")
+        return False
     try:
         return ph.verify(hash=hash, password=password)
     except Exception:
@@ -62,7 +62,7 @@ def set_platform(user_id: int, password: PasswordRequest, platform: str):
         return "Incorrect Password"
 
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text("""
+        result = connection.execute(sqlalchemy.text("""
         UPDATE users
         SET platform_id = sq.sel_platform
         FROM
@@ -75,14 +75,18 @@ def set_platform(user_id: int, password: PasswordRequest, platform: str):
             "user_id":user_id,
             "platform":platform
         }])
-    # error platform doesn't exist
+    
+    if result.rowcount == 0:
+        return "Invalid Platform"
     return "OK"
     
+
+    return "OK"
 @router.post("/delete/{user_id}")
 def delete_user(user_id: int, password: PasswordRequest):
     """ """
     if not validatePassword(user_id, password.password):
-        return "Incorrect Password"
+        return "Incorrect Password or user does not exist"
 
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text(

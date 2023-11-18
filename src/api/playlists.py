@@ -46,11 +46,22 @@ def add_song_to_playlist(playlist_id: int, song: Song):
         }]
         )
 
+    return "Success"
+
 @router.get("/{playlist_id}/play")
 def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongPlayLink:
-    """ """
+    """ Will skip songs not in playlist """
 
     with db.engine.begin() as conn:
+
+        # Check if user id is valid
+        user_valid = conn.execute(sqlalchemy.text("""SELECT id FROM users WHERE id = :user_id"""),
+            [{
+                "user_id":user_id
+            }]).scalar_one_or_none()
+        
+        if not user_valid:
+            return "Invalid user id"
 
         position_valid = conn.execute(sqlalchemy.text("""
             SELECT users_playlist_position.playlist_song_position AS pos
