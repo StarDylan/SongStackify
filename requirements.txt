@@ -7,3 +7,4 @@ python-dotenv
 pre-commit
 pycryptodome
 requests
+argon2-cffi

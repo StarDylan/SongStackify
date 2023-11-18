@@ -2,83 +2,87 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 import sqlalchemy
 from src import database as db
-from Crypto.Hash import SHA256
-from Crypto.Random import get_random_bytes
+from argon2 import PasswordHasher
 
-def hashPassword(password, salt=''):
-    h = SHA256.new()
-    h.update(bytes(password + salt, "utf-8"))
-    hashed = h.hexdigest()
-    return hashed    
+
+ph = PasswordHasher()
 
 router = APIRouter(
     prefix="/users",
     tags=["users"],
 )
 
+def validatePassword(user_id, password):
+    with db.engine.begin() as connection:
+        result  = connection.execute(sqlalchemy.text(
+            """SELECT password
+                FROM users
+                WHERE id=:user_id
+            """),
+        [{
+            "user_id":user_id
+        }]
+        )
+
+    hash = result.scalar_one_or_none()
+    if hash is None:
+        print("User doesn't exist.")
+    try:
+        return ph.verify(hash=hash, password=password)
+    except Exception:
+        return False
+
+class PasswordRequest(BaseModel):
+    password: str
 
 class UserIdResponse(BaseModel):
     user_id: int
 
 @router.post("/create")
-def create_user(password: str) -> UserIdResponse:
+def create_user(pw: PasswordRequest) -> UserIdResponse:
     """ """
-    salt = get_random_bytes(4)
-    salt_str = salt.hex()
-    hashed = hashPassword(password, salt_str)
+    # salt is handled by library
+    hashed = ph.hash(pw.password)
     with db.engine.begin() as connection:
-        user_result = connection.execute(sqlalchemy.text("INSERT INTO users(password, salt)\
-                                           VALUES (:password, :salt)\
+        user_result = connection.execute(sqlalchemy.text("INSERT INTO users(password)\
+                                           VALUES (:password)\
                                            RETURNING id"),
                                            [{
-                                               "password":hashed,
-                                               "salt":salt_str
+                                               "password":hashed
                                            }]).one()
     return user_result.id
 
+class Platform(BaseModel):
+    platform: str
+
 @router.post("/platform")
-def set_platform(user_id: int, password: str, platform: str):
+def set_platform(user_id: int, password: PasswordRequest, platform: str):
     """ """
+    if not validatePassword(user_id, password.password):
+        return "Incorrect Password"
+
     with db.engine.begin() as connection:
-        salt_rsp = connection.execute(sqlalchemy.text(
-            """
-            SELECT salt
-            FROM users
-            WHERE id = :user_id
-            """
-        ),
-        [{
-            "user_id":user_id
-        }]
-        ).scalar_one_or_none()
-
-        if salt_rsp is None:
-            return "User does not exist"
-
-        hashed = hashPassword(password, salt_rsp)
-
-        result = connection.execute(sqlalchemy.text("""UPDATE users
+        connection.execute(sqlalchemy.text("""
+        UPDATE users
         SET platform_id = sq.sel_platform
         FROM
         (SELECT id as sel_platform
             FROM platforms
             WHERE platform_name=:platform) as sq
-        WHERE id=:user_id AND password=:password"""),
+        WHERE id=:user_id
+        """),
         [{
             "user_id":user_id,
-            "password":hashed,
             "platform":platform
         }])
 
         if result.rowcount == 0:
             return "Invalid password or platform"
     
-    return "Platform set"
 
-
-    
+    return "OK"
 @router.post("/delete/{user_id}")
-def delete_user(user_id: int, password: str):
+def delete_user(user_id: int, password: PasswordRequest):
     """ """
     with db.engine.begin() as connection:
         salt_rsp = connection.execute(sqlalchemy.text(
@@ -100,19 +104,22 @@ def delete_user(user_id: int, password: str):
         hashed = hashPassword(password, salt_rsp)
 
         result = connection.execute(sqlalchemy.text(
+  
+    if not validatePassword(user_id, password.password):
+        return "Incorrect Password"
+
+    with db.engine.begin() as connection:
+        connection.execute(sqlalchemy.text(
             """DELETE
                 FROM users
-                WHERE id=:user_id AND password=:password
+                WHERE id=:user_id
             """),
         [{
             "user_id":user_id,
-            "password":hashed
         }]
         )
 
         if result.rowcount == 0:
             return "Invalid password"
     
-    return "User deleted"
-
-
+    return "OK"

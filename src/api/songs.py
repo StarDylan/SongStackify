@@ -24,6 +24,40 @@ class AddSongResponse(BaseModel):
     song_id: int
     authorization_key: str
 
+@router.get("/get_library/", tags=["library"])
+def get_library(offset: int):
+    """
+    Gives songs in library by 5 at a time by user offset. 
+    If offset is greater than song amount, then no songs will be returned
+    """
+    library = []
+
+    get_songs = """
+                SELECT id, song_name, artist, album
+                FROM songs
+                LIMIT 5
+                OFFSET :offset;
+                """
+    
+    with db.engine.begin() as connection:
+        library_result =  connection.execute(sqlalchemy.text(get_songs),
+                                             [{"offset": offset}]).all()
+        
+        for song in library_result:
+            library.append(
+                {
+                    "Song_Id": song.id,
+                    "Song_Name": song.song_name,
+                    "Artist": song.artist,
+                    "Album": song.album
+                }
+
+            )
+            
+    print(library)
+
+    return library
+
 @router.post("/add")
 def add_song(add_song: AddSong) -> AddSongResponse:
     """ """
@@ -38,20 +72,24 @@ def add_song(add_song: AddSong) -> AddSongResponse:
                                         "album": add_song.album,
                                         "artist": add_song.artist
                                     }]).one()
-        connection.execute(sqlalchemy.text("""
-                                        INSERT INTO links (song_id,song_url, platform_id)
-                                        VALUES (:song_id, :song_url,
-                                            (
-                                            SELECT platforms.id
-                                            FROM platforms
-                                            WHERE :url LIKE platforms.platform_url
-                                            ))
-                                        """),
-                                    [{
-                                        "song_id": result.id,
-                                        "song_url": add_song.link,
-                                        "url": add_song.link 
-                                    }])
+        # TODO error handle
+        try: 
+            connection.execute(sqlalchemy.text("""
+                                            INSERT INTO links (song_id,song_url, platform_id)
+                                            VALUES (:song_id, :song_url,
+                                                (
+                                                SELECT platforms.id
+                                                FROM platforms
+                                                WHERE :url LIKE platforms.platform_url
+                                                ))
+                                            """),
+                                        [{
+                                            "song_id": result.id,
+                                            "song_url": add_song.link,
+                                            "url": add_song.link 
+                                        }])
+        except Exception:
+            return "Link Invalid"
         
         return AddSongResponse(authorization_key=result.authorization_key, song_id=result.id)
     
