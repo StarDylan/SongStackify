@@ -5,6 +5,7 @@ from src import database as db
 import json
 import requests
 import os
+import random
 
 from src.api.models import SongPlayLink
 
@@ -128,6 +129,9 @@ def remove_song(song_id: int, authorization: SongAuthorization):
 
 
 def play_ad_if_needed(conn, user_id) -> str | None:
+    if random.choice([True, False]):
+        return None
+
     result = conn.execute(sqlalchemy.text("""
             SELECT COUNT(*) FROM song_history
             WHERE user_id = :user_id
