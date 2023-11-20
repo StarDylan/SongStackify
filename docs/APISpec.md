@@ -7,11 +7,9 @@ If offset is greater than song amount, then no songs will be returned
 **Request**:
 
 ```json
-[
-    {
-        "offset": "integer"
-    }
-]
+{
+    "offset": "integer"
+}
 ```
 
 **Response**:
