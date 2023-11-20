@@ -1,4 +1,29 @@
 # API Specification
+## Get Library - `/song/get_library/` (GET)
+
+Gives songs in library by 5 at a time by user offset. 
+If offset is greater than song amount, then no songs will be returned
+
+**Request**:
+
+```json
+{
+    "offset": "integer"
+}
+```
+
+**Response**:
+
+```json
+[
+    {
+        "song_id": "integer",
+        "song_name": "string",
+        "artist": "string",
+        "album": "string"
+    }
+]
+```
 ## Add Song - `/song/add/` (POST)
 
 Add song to the song library. Each song should be a unique version.
