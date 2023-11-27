@@ -7,8 +7,6 @@ import requests
 import os
 import random
 
-from src.api.models import SongPlayLink
-
 router = APIRouter(
     prefix="/song",
     tags=["song"],
@@ -24,13 +22,26 @@ class AddSongResponse(BaseModel):
     song_id: int
     authorization_key: str
 
-@router.get("/get_library/", tags=["library"])
-def get_library(offset: int):
+
+def check_valid_offset(offset: int) -> int:
+    if offset < 0:
+        return f'{offset} must be postive or 0'
+    if offset >= 9_223_372_036_854_775_807:
+        return f'{offset} is too large'
+    
+    return None
+
+@router.get("/get_library/")
+def get_library(offset: int = 0):
     """
     Gives songs in library by 5 at a time by user offset. 
     If offset is greater than song amount, then no songs will be returned
     """
     library = []
+
+    offset_validity = check_valid_offset(offset)
+    if offset_validity is not None:
+        return offset_validity
 
     get_songs = """
                 SELECT id, song_name, artist, album
@@ -114,23 +125,26 @@ def add_link(add_song: AddSongLink):
         if result is None:
             return "Invalid song ID"
         
-
-        connection.execute(sqlalchemy.text("""
-                                        INSERT INTO links (song_id,song_url, platform_id)
-                                        VALUES (:song_id, :song_url,
-                                            (
-                                            SELECT platforms.id
-                                            FROM platforms
-                                            WHERE :url LIKE platforms.platform_url
-                                            ))
-                                        """),
-                                    [{
-                                        "song_id": add_song.song_id,
-                                        "song_url": add_song.link,
-                                        "url": add_song.link 
-                                    }])
         
-        return "Added Link"
+        try:
+            connection.execute(sqlalchemy.text("""
+                                            INSERT INTO links (song_id,song_url, platform_id)
+                                            VALUES (:song_id, :song_url,
+                                                (
+                                                SELECT platforms.id
+                                                FROM platforms
+                                                WHERE :url LIKE platforms.platform_url
+                                                ))
+                                            """),
+                                        [{
+                                            "song_id": add_song.song_id,
+                                            "song_url": add_song.link,
+                                            "url": add_song.link 
+                                        }])
+            
+            return "Added Link"
+        except Exception:
+            return "Platform link is not supported"
     
 
 class SongAuthorization(BaseModel):
@@ -233,8 +247,13 @@ def play_ad_if_needed(conn, user_id) -> str | None:
     
     return result
 
+class SongResponse(BaseModel):
+    url: str
+    is_ad: bool
+
+
 @router.get("/{song_id}/play")
-def play_song(song_id: int, user_id: str = Header(None)) -> SongPlayLink:
+def play_song(song_id: int, user_id: str = Header(None)) -> SongResponse:
     """ """
     with db.engine.begin() as conn:
         query = conn.execute(sqlalchemy.text("""
@@ -262,7 +281,7 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongPlayLink:
                 }]).one_or_none()
             
             if query is None:
-                return "Invalid user ID"
+                return SongResponse(url="Invalid user ID", is_ad=False)
 
             query = conn.execute(sqlalchemy.text("""
                 SELECT * FROM songs
@@ -273,13 +292,13 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongPlayLink:
                 }]).one_or_none()
                                                  
             if query is None:
-                return "Invalid song ID"
+                return SongResponse(url="Invalid song ID", is_ad=False)
 
-            return "Song not available on user's platform"
+            return SongResponse(url="Song not available on user's platform", is_ad=False)
         
         ad_link = play_ad_if_needed(conn, user_id)
         if ad_link is not None:
-            return ad_link
+            return SongResponse(url=ad_link, is_ad=True)
         
         conn.execute(sqlalchemy.text("""
           INSERT INTO song_history (user_id, song_id) VALUES (:user_id, :song_id)
@@ -289,6 +308,6 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongPlayLink:
                 "user_id": user_id
             }])
         
-        return query.song_url
+        return SongResponse(url=query.song_url, is_ad=False)
 
 

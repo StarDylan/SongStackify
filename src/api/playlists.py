@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
 import sqlalchemy
-from src.api.models import SongPlayLink
-from src.api.songs import play_song
+from src.api.songs import play_song, SongResponse
 import src.database as db 
 
 router = APIRouter(
@@ -37,19 +36,22 @@ class Song(BaseModel):
 def add_song_to_playlist(playlist_id: int, song: Song):
     """ """
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text(
-            """INSERT INTO playlist_songs(playlist_id, song_id)
-            VALUES (:playlist_id, :song_id)"""),
-        [{
-            "playlist_id":playlist_id,
-            "song_id":song.song_id
-        }]
-        )
+        try: 
+            connection.execute(sqlalchemy.text(
+                """INSERT INTO playlist_songs(playlist_id, song_id)
+                VALUES (:playlist_id, :song_id)"""),
+            [{
+                "playlist_id":playlist_id,
+                "song_id":song.song_id
+            }]
+            )
+        except Exception:
+            return "Song doesn't exist"
 
     return "Success"
 
 @router.get("/{playlist_id}/play")
-def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongPlayLink:
+def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongResponse:
     """ Will skip songs not in playlist """
 
     with db.engine.begin() as conn:
@@ -112,7 +114,14 @@ def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongPlayLink
                         "pos_id":first.pos
                     }])
                     
-            return play_song(first.current_song_id, user_id=user_id)
+            response = play_song(first.current_song_id, user_id=user_id)
+
+
+            if response.is_ad:
+                # Rollback position change
+                conn.rollback()
+                
+            return response
         
         else:
 
@@ -165,7 +174,10 @@ def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongPlayLink
                     "pos_id":next_song_info.next_pos_id
                 }])
 
-            return play_song(next_song_info.current_song_id, user_id=user_id)
-    
-    raise NotImplementedError()
+            response = play_song(next_song_info.current_song_id, user_id=user_id)
+            if response.is_ad:
+                # Rollback position change
+                conn.rollback()
+                
+            return response
 
