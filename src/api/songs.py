@@ -224,10 +224,12 @@ def play_ad_if_needed(conn, user_id) -> str | None:
     result = conn.execute(sqlalchemy.text("""
             SELECT link FROM ad_campaigns
             WHERE target_mood = :mood
-            ORDER BY RANDOM() """), [{
+            ORDER BY RANDOM() 
+            LIMIT 1
+                                          """), [{
                 "mood": mood
             }]).scalar_one_or_none()
-    
+
     if result is None:
         return None
     
