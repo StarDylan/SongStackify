@@ -22,7 +22,7 @@ class AddSongResponse(BaseModel):
     song_id: int
     authorization_key: str
 
-@router.get("/get_library/", tags=["library"])
+@router.get("/get_library/")
 def get_library(offset: int):
     """
     Gives songs in library by 5 at a time by user offset. 

@@ -36,14 +36,17 @@ class Song(BaseModel):
 def add_song_to_playlist(playlist_id: int, song: Song):
     """ """
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text(
-            """INSERT INTO playlist_songs(playlist_id, song_id)
-            VALUES (:playlist_id, :song_id)"""),
-        [{
-            "playlist_id":playlist_id,
-            "song_id":song.song_id
-        }]
-        )
+        try: 
+            connection.execute(sqlalchemy.text(
+                """INSERT INTO playlist_songs(playlist_id, song_id)
+                VALUES (:playlist_id, :song_id)"""),
+            [{
+                "playlist_id":playlist_id,
+                "song_id":song.song_id
+            }]
+            )
+        except Exception:
+            return "Song doesn't exist"
 
     return "Success"
 
