@@ -1,3 +1,4 @@
+from typing import Annotated
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
 import sqlalchemy
@@ -22,16 +23,26 @@ class AddSongResponse(BaseModel):
     song_id: int
     authorization_key: str
 
+
+def check_valid_offset(offset: int) -> int:
+    if offset < 0:
+        return f'{offset} must be postive or 0'
+    if offset >= 9_223_372_036_854_775_807:
+        return f'{offset} is too large'
+    
+    return None
+
 @router.get("/get_library/")
-def get_library(offset: int):
+def get_library(offset: int = 0):
     """
     Gives songs in library by 5 at a time by user offset. 
     If offset is greater than song amount, then no songs will be returned
     """
     library = []
 
-    if offset < 0:
-        return "Invalid offset"
+    offset_validity = check_valid_offset(offset)
+    if offset_validity is not None:
+        return offset_validity
 
     get_songs = """
                 SELECT id, song_name, artist, album
