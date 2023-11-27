@@ -7,8 +7,6 @@ import requests
 import os
 import random
 
-from src.api.models import SongPlayLink
-
 router = APIRouter(
     prefix="/song",
     tags=["song"],
@@ -233,8 +231,13 @@ def play_ad_if_needed(conn, user_id) -> str | None:
     
     return result
 
+class SongResponse(BaseModel):
+    url: str
+    is_ad: bool
+
+
 @router.get("/{song_id}/play")
-def play_song(song_id: int, user_id: str = Header(None)) -> SongPlayLink:
+def play_song(song_id: int, user_id: str = Header(None)) -> SongResponse:
     """ """
     with db.engine.begin() as conn:
         query = conn.execute(sqlalchemy.text("""
@@ -262,7 +265,7 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongPlayLink:
                 }]).one_or_none()
             
             if query is None:
-                return "Invalid user ID"
+                return SongResponse(url="Invalid user ID", is_ad=False)
 
             query = conn.execute(sqlalchemy.text("""
                 SELECT * FROM songs
@@ -273,13 +276,13 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongPlayLink:
                 }]).one_or_none()
                                                  
             if query is None:
-                return "Invalid song ID"
+                return SongResponse(url="Invalid song ID", is_ad=False)
 
-            return "Song not available on user's platform"
+            return SongResponse(url="Song not available on user's platform", is_ad=False)
         
         ad_link = play_ad_if_needed(conn, user_id)
         if ad_link is not None:
-            return ad_link
+            return SongResponse(url=ad_link, is_ad=True)
         
         conn.execute(sqlalchemy.text("""
           INSERT INTO song_history (user_id, song_id) VALUES (:user_id, :song_id)
@@ -289,6 +292,6 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongPlayLink:
                 "user_id": user_id
             }])
         
-        return query.song_url
+        return SongResponse(url=query.song_url, is_ad=False)
 
 

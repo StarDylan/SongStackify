@@ -112,7 +112,14 @@ def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongPlayLink
                         "pos_id":first.pos
                     }])
                     
-            return play_song(first.current_song_id, user_id=user_id)
+            response = play_song(first.current_song_id, user_id=user_id)
+
+
+            if response.is_ad:
+                # Rollback position change
+                conn.rollback()
+                
+            return response
         
         else:
 
@@ -165,7 +172,10 @@ def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongPlayLink
                     "pos_id":next_song_info.next_pos_id
                 }])
 
-            return play_song(next_song_info.current_song_id, user_id=user_id)
-    
-    raise NotImplementedError()
+            response = play_song(next_song_info.current_song_id, user_id=user_id)
+            if response.is_ad:
+                # Rollback position change
+                conn.rollback()
+                
+            return response
 
