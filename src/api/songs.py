@@ -112,23 +112,26 @@ def add_link(add_song: AddSongLink):
         if result is None:
             return "Invalid song ID"
         
-
-        connection.execute(sqlalchemy.text("""
-                                        INSERT INTO links (song_id,song_url, platform_id)
-                                        VALUES (:song_id, :song_url,
-                                            (
-                                            SELECT platforms.id
-                                            FROM platforms
-                                            WHERE :url LIKE platforms.platform_url
-                                            ))
-                                        """),
-                                    [{
-                                        "song_id": add_song.song_id,
-                                        "song_url": add_song.link,
-                                        "url": add_song.link 
-                                    }])
         
-        return "Added Link"
+        try:
+            connection.execute(sqlalchemy.text("""
+                                            INSERT INTO links (song_id,song_url, platform_id)
+                                            VALUES (:song_id, :song_url,
+                                                (
+                                                SELECT platforms.id
+                                                FROM platforms
+                                                WHERE :url LIKE platforms.platform_url
+                                                ))
+                                            """),
+                                        [{
+                                            "song_id": add_song.song_id,
+                                            "song_url": add_song.link,
+                                            "url": add_song.link 
+                                        }])
+            
+            return "Added Link"
+        except Exception:
+            return "Platform link is not supported"
     
 
 class SongAuthorization(BaseModel):
