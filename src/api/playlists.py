@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
 import sqlalchemy
-from src.api.models import SongPlayLink
-from src.api.songs import play_song
+from src.api.songs import play_song, SongResponse
 import src.database as db 
 
 router = APIRouter(
@@ -49,7 +48,7 @@ def add_song_to_playlist(playlist_id: int, song: Song):
     return "Success"
 
 @router.get("/{playlist_id}/play")
-def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongPlayLink:
+def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongResponse:
     """ Will skip songs not in playlist """
 
     with db.engine.begin() as conn:

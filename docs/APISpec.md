@@ -174,3 +174,22 @@ Play the next song in the specified playlist, or if no session, the first song.
     }
 ]
 ```
+
+## Create Ad Campaign - `/ad/create` (POST)
+
+Create a new ad campaign targeting a user's mood.
+
+**Request**:
+
+```json
+{
+  "mood": "string", /* Mood to target (SAD | HAPPY | ANGRY) */
+  "link": "string", /* URL to redirect to */
+}
+```
+
+**Returns**:
+
+```json
+"Success"
+```
