@@ -30,6 +30,9 @@ def get_library(offset: int):
     """
     library = []
 
+    if offset < 0:
+        return "Invalid offset"
+
     get_songs = """
                 SELECT id, song_name, artist, album
                 FROM songs
