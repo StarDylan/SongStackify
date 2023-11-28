@@ -64,9 +64,8 @@ Remove song from the song library.
     }
 ]
 ```
-## Play Song - `/song/{song_id}/play` (GET)
-
-Returns a URL to play the given song corespronging to the song_id
+## Play Song - `/song/{song_id}/play` (GET) (*COMPLEX*)
+Returns a URL to play the given song corespronging to the song_id. May play an ad.
 
 **Returns**:
 
@@ -162,7 +161,7 @@ Adds a song to the end of the playlist.
 ```
 
 
-## Play Playlist - `/playlist/{playlist_id}/play` (GET)
+## Play Playlist - `/playlist/{playlist_id}/play` (GET) (*COMPLEX*)
 
 Play the next song in the specified playlist, or if no session, the first song.
 
@@ -174,4 +173,23 @@ Play the next song in the specified playlist, or if no session, the first song.
        "url": "string" /* Url in User’s preferred Streaming platform */
     }
 ]
+```
+
+## Create Ad Campaign - `/ad/create` (POST)
+
+Create a new ad campaign targeting a user's mood.
+
+**Request**:
+
+```json
+{
+  "mood": "string", /* Mood to target (SAD | HAPPY | ANGRY) */
+  "link": "string", /* URL to redirect to */
+}
+```
+
+**Returns**:
+
+```json
+"Success"
 ```
