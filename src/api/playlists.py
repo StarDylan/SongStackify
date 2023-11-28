@@ -18,7 +18,7 @@ class PlaylistIdResponse(BaseModel):
 @router.post("/create")
 def create_playlist(new_playlist: CreatePlaylist) -> PlaylistIdResponse:
     """ """
-    with db.engine.begin() as connection:
+    with (db.engine.execution_options(isolation_level="SERIALIZABLE")).begin() as connection:
         result = connection.execute(sqlalchemy.text("""
                                         INSERT INTO playlists (name)
                                         VALUES (:playlist_name)

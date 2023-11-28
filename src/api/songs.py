@@ -113,7 +113,7 @@ class AddSongLink(BaseModel):
 @router.post("/link/add")
 def add_link(add_song: AddSongLink):
     """ """
-    with db.engine.begin() as connection:
+    with (db.engine.execution_options(isolation_level="SERIALIZABLE")).begin() as connection:
         result = connection.execute(sqlalchemy.text("""
                                         SELECT * FROM songs
                                         WHERE id = :song_id
@@ -124,8 +124,6 @@ def add_link(add_song: AddSongLink):
         
         if result is None:
             return "Invalid song ID"
-        
-        
         try:
             connection.execute(sqlalchemy.text("""
                                             INSERT INTO links (song_id,song_url, platform_id)
@@ -141,10 +139,9 @@ def add_link(add_song: AddSongLink):
                                             "song_url": add_song.link,
                                             "url": add_song.link 
                                         }])
-            
             return "Added Link"
         except Exception:
-            return "Platform link is not supported"
+            return "Link already exists"
     
 
 class SongAuthorization(BaseModel):
@@ -238,10 +235,12 @@ def play_ad_if_needed(conn, user_id) -> str | None:
     result = conn.execute(sqlalchemy.text("""
             SELECT link FROM ad_campaigns
             WHERE target_mood = :mood
-            ORDER BY RANDOM() """), [{
+            ORDER BY RANDOM() 
+            LIMIT 1
+                                          """), [{
                 "mood": mood
             }]).scalar_one_or_none()
-    
+
     if result is None:
         return None
     
