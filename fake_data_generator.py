@@ -13,6 +13,8 @@ def get_random_string(length):
 
 engine = create_engine("postgresql://postgres:example@localhost:61321", pool_pre_ping=True)
 
+# Path to data dir from https://www.aicrowd.com/challenges/spotify-million-playlist-dataset-challenge
+# also should include 1000-most-common-passwords.txt
 data_path = "./data"
 
 send_to_db = True
@@ -28,6 +30,9 @@ casual_user_days_on_platform = [1, 30]
 
 user_good_password_chance = 0.05
 good_password_length = [8, 20]
+
+ad_campaign_num = 100
+moods = ["HAPPY", "SAD", "ANGRY"]
 
 most_common_passwords = []
 
@@ -165,6 +170,7 @@ for file in files:
             songs_to_insert = []
             playlists_to_insert = []
             playlist_songs_to_insert = []
+            links_to_add = []
             for playlist in data["playlists"]:
                 # iterate through tracks
                 playlists[next_playlist_id] = []
@@ -177,6 +183,11 @@ for file in files:
                                             "artist": track["artist_name"],
                                             "album": track["album_name"]
                                         })
+                        links_to_add.append({
+                            "song_id": next_song_id,
+                            "platform_id": 1,
+                            "song_url": "https://open.spotify.com/track/" + track["track_uri"].split(":")[2]
+                        })
                         songs[track["track_uri"]] = next_song_id
                         next_song_id += 1
                         song_cnt += 1
@@ -214,6 +225,11 @@ for file in files:
                     playlist_songs_to_insert)
                 print(f"Finished playlist_songs - Total Playlist Songs Added: {len(playlist_songs_to_insert)}")
                 print("finished send for file {file}")
+
+                print("Starting to add links")
+                conn.execute(text("""INSERT INTO links (song_id, platform_id, song_url) VALUES (:song_id, :platform_id, :song_url)"""), links_to_add)
+                print(f"Finished adding links - Total Links Added: {len(links_to_add)}")
+
             else:
                 print("skipping send because send_to_db is False")
                 print(f"Total Songs Added: {song_cnt}")
@@ -255,6 +271,8 @@ with engine.begin() as conn:
         
         # Assign playlists
         for i in range(num_playlists_created):
+            if len(playlists) == 0:
+                break
             # select random playlist
             playlist_id = next(iter(playlists.keys()))
             playlist_songs = playlists.pop(playlist_id)
@@ -338,3 +356,38 @@ with engine.begin() as conn:
         print("skipping user send because send_to_db is False")
         print(f"Total Users: {users_cnt}")
         print(f"Sample Password: {users_to_add[0]['password']}")
+
+
+
+
+# add ad campaigns
+ad_campaigns_to_add = []
+
+for i in range(ad_campaign_num):
+    random_mood = random.choice(moods)
+    url_salt = get_random_string(10)
+
+    if random_mood == "HAPPY":
+        url = "https://en.wikipedia.org/wiki/Happiness#" + url_salt
+    elif random_mood == "SAD":
+        url = "https://en.wikipedia.org/wiki/Sadness#" + url_salt
+    else:
+        url = "https://en.wikipedia.org/wiki/Anger#" + url_salt
+
+    ad_campaigns_to_add.append({
+        "link": url,
+        "target_mood": random_mood
+    })
+
+with engine.begin() as conn:
+    if send_to_db:
+        print("starting ad_campaign send")
+        conn.execute(text("""INSERT INTO ad_campaigns (link, target_mood) VALUES (:link, :target_mood)"""), ad_campaigns_to_add)
+        print(f"finished ad_campaign send - Added {len(ad_campaigns_to_add)} ad_campaigns")
+    else:
+        print("skipping ad_campaign send because send_to_db is False")
+        print(f"Total Ad Campaigns: {len(ad_campaigns_to_add)}")
+
+
+total_rows = song_cnt + playlist_cnt + users_cnt + len(playlist_position_to_add) + len(playlist_song_history_to_add) + len(ad_campaigns_to_add) + len(links_to_add)
+print(f"Total Rows: {total_rows}")
