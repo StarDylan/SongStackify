@@ -146,6 +146,11 @@ with engine.begin() as conn:
                             constraint users_playlist_position_user_id_fkey foreign key (user_id) references users (id) on delete cascade
                         ) tablespace pg_default;"""))
 
+
+# Add Spotify Platform
+with engine.begin() as conn:
+    conn.execute(text("""INSERT INTO platforms (platform_name, platform_url) VALUES ('Spotify', 'https://open.spotify.com%')"""))
+
 next_song_id = 1
 next_playlist_id = 1
     # iterate through files
@@ -261,7 +266,7 @@ with engine.begin() as conn:
     # Add users to db
     if send_to_db:
         print("starting user send of {users_cnt} users")
-        conn.execute(text("""INSERT INTO users (password) VALUES (:password)"""), users_to_add)
+        conn.execute(text("""INSERT INTO users (password, platform_id) VALUES (:password, 1)"""), users_to_add)
         print("finished user send")
     else:
         print("skipping user send because send_to_db is False")
