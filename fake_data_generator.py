@@ -19,14 +19,16 @@ data_path = "./data"
 
 send_to_db = True
 
+
+# Each file is 1000 playlists, everything else is based off this
+number_of_files = 3
+
 avid_user_percent = 0.01
 avid_user_playlist_range = [20,30]
-avid_user_listen_range_per_day = [10, 30]
-avid_user_days_on_platform = [4, 90]
 
 casual_user_playlist_range = [1,5]
-casual_user_listen_range_per_day = [1, 10]
-casual_user_days_on_platform = [1, 30]
+
+full_playlist_plays = [1, 7]
 
 user_good_password_chance = 0.05
 good_password_length = [8, 20]
@@ -50,8 +52,6 @@ playlists = {}
 song_cnt = 0
 playlist_cnt = 0
 file_cnt = 0
-
-max_songs = 10000
 
 with engine.begin() as conn:
     # drop all tables
@@ -161,7 +161,7 @@ next_playlist_id = 1
 next_playlist_song_id = 1
     # iterate through files
 for file in files:
-    if song_cnt > max_songs:
+    if file_cnt >= number_of_files:
         break
     # open and load json file
     with open(os.path.join(data_path, file)) as json_file:
@@ -287,6 +287,14 @@ with engine.begin() as conn:
                     "user_id": next_user_idx,
                     "song_id": playlist_songs[playlist_idx][0]
                 })
+
+            # they also played the playlist multiple times all the way through
+            for i in range(random.randint(full_playlist_plays[0], full_playlist_plays[1])):
+                for playlist_idx in range(len(playlist_songs)):
+                    user_song_history.append({
+                        "user_id": next_user_idx,
+                        "song_id": playlist_songs[playlist_idx][0]
+                    })
 
             # create user_playlist_position
             playlist_position_to_add.append({
