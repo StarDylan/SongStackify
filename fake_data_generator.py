@@ -1,26 +1,52 @@
 import os
 from sqlalchemy import create_engine, text
 import json
+import random
+import argon2
+import string
+
+def get_random_string(length):
+    # choose from all lowercase letter
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    return result_str
 
 engine = create_engine("postgresql://postgres:example@localhost:61321", pool_pre_ping=True)
 
 data_path = "./data"
 
-avid_user_percent = 0.1
-avid_user_range = [10,100]
+send_to_db = True
 
-casual_user_range = [1,10]
+avid_user_percent = 0.01
+avid_user_playlist_range = [20,30]
+avid_user_listen_range_per_day = [10, 30]
+avid_user_days_on_platform = [4, 90]
 
+casual_user_playlist_range = [1,5]
+casual_user_listen_range_per_day = [1, 10]
+casual_user_days_on_platform = [1, 30]
+
+user_good_password_chance = 0.05
+good_password_length = [8, 20]
+
+most_common_passwords = []
+
+with open(os.path.join(data_path, "./1000-most-common-passwords.txt")) as f:
+    for line in f:
+        most_common_passwords.append(line.strip())
+
+ph = argon2.PasswordHasher()
 
 # list all files in data_path
 files = os.listdir(data_path)
 
 songs = {}
+playlists = {}
 song_cnt = 0
 playlist_cnt = 0
 file_cnt = 0
 
-max_songs = 600000
+max_songs = 10000
 
 with engine.begin() as conn:
     # drop all tables
@@ -120,20 +146,24 @@ with engine.begin() as conn:
                             constraint users_playlist_position_user_id_fkey foreign key (user_id) references users (id) on delete cascade
                         ) tablespace pg_default;"""))
 
-next_id = 1
+next_song_id = 1
+next_playlist_id = 1
     # iterate through files
 for file in files:
+    if song_cnt > max_songs:
+        break
     # open and load json file
     with open(os.path.join(data_path, file)) as json_file:
         data = json.load(json_file)
         with engine.begin() as conn:
-            if song_cnt > max_songs:
-                break
             songs_to_insert = []
-            for record in data["playlists"]:
+            playlists_to_insert = []
+            playlist_songs_to_insert = []
+            for playlist in data["playlists"]:
                 # iterate through tracks
+                playlist[next_playlist_id] = []
                 
-                for track in record["tracks"]:
+                for track in playlist["tracks"]:
                     # add track to songs dict
                     if track["track_uri"] not in songs:
                         songs_to_insert.append({
@@ -141,20 +171,105 @@ for file in files:
                                             "artist": track["artist_name"],
                                             "album": track["album_name"]
                                         })
-                        songs[track["track_uri"]] = next_id
-                        next_id += 1
+                        songs[track["track_uri"]] = next_song_id
+                        next_song_id += 1
                         song_cnt += 1
+                    
+                    # add track to playlists dict and to_send
+                    song_id = songs[track["track_uri"]]
+                    playlist_songs_to_insert.append({
+                        "playlist_id": next_playlist_id,
+                        "song_id": song_id
+                    })
+                    playlist[next_playlist_id].append(song_id)
+
+
+                next_playlist_id += 1
                 playlist_cnt += 1
-            print("starting send")
-            conn.execute(text("""INSERT INTO songs (song_name, artist, album) VALUES (:song_name, :artist, :album) RETURNING id"""),
-                                    songs_to_insert)
-            print(f"Total Songs: {song_cnt}")
-            
+                playlists_to_insert.append({
+                    "name": playlist["name"]
+                })
+
+            if send_to_db:
+                print(f"starting send for file {file}")
+                print("Starting send for songs")
+                conn.execute(text("""INSERT INTO songs (song_name, artist, album) VALUES (:song_name, :artist, :album)"""),
+                                        songs_to_insert)
+                print(f"Finsihed sending songs - Total Songs Added: {song_cnt}")
+                
+
+                print("Starting send for playlists")
+                conn.execute(text("""INSERT INTO playlists (name) VALUES (:name)"""), playlists_to_insert)
+                print(f"Finsihed sending playlists - Total Playlists Added: {playlist_cnt}")
+
+                print("Starting send for playlist_songs")
+                conn.execute(text("""INSERT INTO playlist_songs (playlist_id, song_id) VALUES (:playlist_id, :song_id)"""),
+                    playlist_songs_to_insert)
+                print(f"Finished playlist_songs - Total Playlist Songs Added: {len(playlist_songs_to_insert)}")
+                print("finished send for file {file}")
+            else:
+                print("skipping send because send_to_db is False")
+                print(f"Total Songs Added: {song_cnt}")
+                print(f"Total Playlists Added: {playlist_cnt}")
+                print(f"Total Playlist Songs Added: {len(playlist_songs_to_insert)}")
+
     file_cnt += 1
 
-    print("Total songs: " + str(song_cnt))
-    print("Total playlists: " + str(playlist_cnt))
-    print("Total files: " + str(file_cnt))
+print("Completed adding Songs + Playlists")
+
+playlist_not_made_by_user = playlist_cnt
+
+# add users based on ratios
+users_cnt = 0
+
+users_to_add = []
+
+print("Starting user creation")
+with engine.begin() as conn:
+    while playlist_not_made_by_user > 0:
+        # choose avid or casual user
+        if random.random() < avid_user_percent:
+            # Avid User
+            num_playlists_created = random.randint(avid_user_playlist_range[0], avid_user_playlist_range[1])
+
+
+        else:
+            # Casual User
+            num_playlists_created = random.randint(casual_user_playlist_range[0], casual_user_playlist_range[1])
+
+        playlist_not_made_by_user -= num_playlists_created
+
+        # select password
+        if random.random() < user_good_password_chance:
+            length = random.randint(good_password_length[0], good_password_length[1])
+            password = get_random_string(length)
+        else:
+            password = random.choice(most_common_passwords)
+
+        hash = ph.hash(password)
+
+        # create user
+        users_to_add.append({
+            "password": hash
+        })
+
+        users_cnt += 1
+        
+        if users_cnt % 50 == 0:
+            print(f"...Created {users_cnt} users")
+
+    # Add users to db
+    if send_to_db:
+        print("starting user send of {users_cnt} users")
+        conn.execute(text("""INSERT INTO users (password) VALUES (:password)"""), users_to_add)
+        print("finished user send")
+    else:
+        print("skipping user send because send_to_db is False")
+        print(f"Total Users: {users_cnt}")
+        print(f"Sample Password: {users_to_add[0]['password']}")
+
+
+
         # create engine
         # 
         # # iterate through playlists
