@@ -153,6 +153,7 @@ with engine.begin() as conn:
 
 next_song_id = 1
 next_playlist_id = 1
+next_playlist_song_id = 1
     # iterate through files
 for file in files:
     if song_cnt > max_songs:
@@ -166,7 +167,7 @@ for file in files:
             playlist_songs_to_insert = []
             for playlist in data["playlists"]:
                 # iterate through tracks
-                playlist[next_playlist_id] = []
+                playlists[next_playlist_id] = []
                 
                 for track in playlist["tracks"]:
                     # add track to songs dict
@@ -186,7 +187,8 @@ for file in files:
                         "playlist_id": next_playlist_id,
                         "song_id": song_id
                     })
-                    playlist[next_playlist_id].append(song_id)
+                    playlists[next_playlist_id].append((song_id, next_playlist_song_id))
+                    next_playlist_song_id += 1
 
 
                 next_playlist_id += 1
@@ -226,8 +228,13 @@ playlist_not_made_by_user = playlist_cnt
 
 # add users based on ratios
 users_cnt = 0
+next_user_idx = 1
 
 users_to_add = []
+playlist_position_to_add = []
+playlist_song_history_to_add = []
+
+playlist_song_history_per_user = []
 
 print("Starting user creation")
 with engine.begin() as conn:
@@ -244,6 +251,35 @@ with engine.begin() as conn:
 
         playlist_not_made_by_user -= num_playlists_created
 
+        user_song_history = []
+        
+        # Assign playlists
+        for i in range(num_playlists_created):
+            # select random playlist
+            playlist_id = next(iter(playlists.keys()))
+            playlist_songs = playlists.pop(playlist_id)
+
+            # select random position
+            playlist_song_position_idx = random.randint(0, len(playlist_songs)-1)
+            playlist_song_position_id = playlist_songs[playlist_song_position_idx][1]
+
+            # they played all songs before that
+            for playlist_idx in range(playlist_song_position_idx):
+                user_song_history.append({
+                    "user_id": next_user_idx,
+                    "song_id": playlist_songs[playlist_idx][0]
+                })
+
+            # create user_playlist_position
+            playlist_position_to_add.append({
+                "playlist_id": playlist_id,
+                "playlist_song_position": playlist_song_position_id,
+                "user_id": next_user_idx
+            })
+        
+        # add song history
+        playlist_song_history_per_user.append(user_song_history)
+
         # select password
         if random.random() < user_good_password_chance:
             length = random.randint(good_password_length[0], good_password_length[1])
@@ -259,25 +295,46 @@ with engine.begin() as conn:
         })
 
         users_cnt += 1
-        
+        next_user_idx += 1
+
         if users_cnt % 50 == 0:
             print(f"...Created {users_cnt} users")
+
+    print(f"Finished creating users - Total Users: {users_cnt}")
+
+    print("Starting song history creation")
+    # add song history, each user will go in order, but the order of users is random for each new user
+    while len(playlist_song_history_per_user) > 0:
+        # random user index
+        user_idx = random.randint(0, len(playlist_song_history_per_user)-1)
+
+        if len(playlist_song_history_per_user[user_idx]) == 0:
+            playlist_song_history_per_user.pop(user_idx)
+
+        # get next song for user
+        user_song_record = playlist_song_history_per_user[user_idx].pop(0)
+
+        if len(playlist_song_history_per_user[user_idx]) == 0:
+            playlist_song_history_per_user.pop(user_idx)
+
+        playlist_song_history_to_add.append(user_song_record)
+
+    print("Finished song history creation")
 
     # Add users to db
     if send_to_db:
         print("starting user send of {users_cnt} users")
         conn.execute(text("""INSERT INTO users (password, platform_id) VALUES (:password, 1)"""), users_to_add)
-        print("finished user send")
+        print(f"finished user send - Added {users_cnt} users")
+
+        print("starting playlist_position send")
+        conn.execute(text("""INSERT INTO users_playlist_position (playlist_id, playlist_song_position, user_id) VALUES (:playlist_id, :playlist_song_position, :user_id)"""), playlist_position_to_add)
+        print(f"finished playlist_position send - Added {len(playlist_position_to_add)} playlist_positions")
+
+        print("starting song_history send")
+        conn.execute(text("""INSERT INTO song_history (user_id, song_id) VALUES (:user_id, :song_id)"""), playlist_song_history_to_add)
+        print(f"finished song_history send - Added {len(playlist_song_history_to_add)} song_history")
     else:
         print("skipping user send because send_to_db is False")
         print(f"Total Users: {users_cnt}")
         print(f"Sample Password: {users_to_add[0]['password']}")
-
-
-
-        # create engine
-        # 
-        # # iterate through playlists
-        # for playlist in data["playlists"]:
-        #     # insert playlist into playlists table
-        #     with engine.begin() as connection:
