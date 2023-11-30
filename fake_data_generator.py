@@ -47,6 +47,15 @@ ph = argon2.PasswordHasher()
 # list all files in data_path
 files = os.listdir(data_path)
 
+platforms = [{
+    "platform_id": 1,
+    "platform_url": "https://open.spotify.com/track/"
+}, {
+    "platform_id": 2,
+    "platform_url": "https://music.apple.com/INVALID_LINK/"
+
+}]
+
 songs = {}
 playlists = {}
 song_cnt = 0
@@ -152,9 +161,10 @@ with engine.begin() as conn:
                         ) tablespace pg_default;"""))
 
 
-# Add Spotify Platform
+# Add Spotify + Apple Platforms
 with engine.begin() as conn:
-    conn.execute(text("""INSERT INTO platforms (platform_name, platform_url) VALUES ('Spotify', 'https://open.spotify.com%')"""))
+    conn.execute(text("""INSERT INTO platforms (platform_name, platform_url) VALUES ('Spotify', 'https://open.spotify.com/%')"""))
+    conn.execute(text("""INSERT INTO platforms (platform_name, platform_url) VALUES ('Apple', 'https://music.apple.com/%')"""))
 
 next_song_id = 1
 next_playlist_id = 1
@@ -183,11 +193,32 @@ for file in files:
                                             "artist": track["artist_name"],
                                             "album": track["album_name"]
                                         })
-                        links_to_add.append({
-                            "song_id": next_song_id,
-                            "platform_id": 1,
-                            "song_url": "https://open.spotify.com/track/" + track["track_uri"].split(":")[2]
-                        })
+                        
+                        # Choose random platform, but 80% of the time it will be spotify, 10% apple, 10% on both
+                        if random.random() < 0.8:
+                            links_to_add.append({
+                                "song_id": next_song_id,
+                                "platform_id": 1,
+                                "song_url": "https://open.spotify.com/track/" + track["track_uri"].split(":")[2]
+                            })
+                        elif random.random() < 0.5:
+                            links_to_add.append({
+                                "song_id": next_song_id,
+                                "platform_id": 2,
+                                "song_url": "https://music.apple.com/INVALID_LINK/" + track["track_uri"].split(":")[2]
+                            })
+                        else:
+                            links_to_add.append({
+                                "song_id": next_song_id,
+                                "platform_id": 2,
+                                "song_url": "https://music.apple.com/INVALID_LINK/" + track["track_uri"].split(":")[2]
+                            })
+                            links_to_add.append({
+                                "song_id": next_song_id,
+                                "platform_id": 1,
+                                "song_url": "https://open.spotify.com/track/" + track["track_uri"].split(":")[2]
+                            })
+                        
                         songs[track["track_uri"]] = next_song_id
                         next_song_id += 1
                         song_cnt += 1
@@ -315,9 +346,15 @@ with engine.begin() as conn:
 
         hash = ph.hash(password)
 
+        if random.random() < 0.05:
+            platform = 2
+        else:
+            platform = 1
+
         # create user
         users_to_add.append({
-            "password": hash
+            "password": hash,
+            "platform_id": platform
         })
 
         users_cnt += 1
@@ -350,7 +387,7 @@ with engine.begin() as conn:
     # Add users to db
     if send_to_db:
         print("starting user send of {users_cnt} users")
-        conn.execute(text("""INSERT INTO users (password, platform_id) VALUES (:password, 1)"""), users_to_add)
+        conn.execute(text("""INSERT INTO users (password, platform_id) VALUES (:password, :platform_id)"""), users_to_add)
         print(f"finished user send - Added {users_cnt} users")
 
         print("starting playlist_position send")
