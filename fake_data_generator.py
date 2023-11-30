@@ -5,6 +5,9 @@ import random
 import argon2
 import string
 
+# Current Config creates 1027093 rows
+
+
 def get_random_string(length):
     # choose from all lowercase letter
     letters = string.ascii_lowercase
