@@ -2,10 +2,12 @@ from fastapi import APIRouter, Header
 from pydantic import BaseModel
 import sqlalchemy
 from src import database as db
+from src.api.ollamarunner import q
 import json
 import requests
 import os
 import random
+
 
 router = APIRouter(
     prefix="/song",
@@ -181,56 +183,27 @@ def play_ad_if_needed(conn, user_id) -> str | None:
     if random.choice([True, False]):
         return None
 
+    # Check if mood is already cached
+
     result = conn.execute(sqlalchemy.text("""
-            SELECT COUNT(*) FROM song_history
-            WHERE user_id = :user_id
-            """),
-            [{
-                "user_id": user_id
-            }]).scalar_one()
-    
-    if result < 5:
+        SELECT last_updated, mood, songs_played
+        FROM user_moods
+        WHERE user_id = :user_id
+                                          """
+                                            ), [{
+            "user_id": user_id
+        }]).one_or_none()
+    if result is None:
+        # no mood calculated
+        # mood = gen_mood(conn, user_id)
+        print("calling ollama")
+        q.put(user_id)
         return None
-    
-    result = conn.execute(sqlalchemy.text("""
-            SELECT song_name, artist
-            FROM song_history
-            JOIN songs ON song_history.song_id = songs.id
-            WHERE user_id = 23
-            ORDER BY song_history.created_at DESC
-            LIMIT 5
-            """)).all()
-    
-    song_prompt = "Songs:\n"
-    for song in result:
-        song_prompt += song.song_name + " by " + song.artist + "\n"
+    elif result.songs_played >= 5:
 
-    payload = json.dumps({
-        "model": "llama2-uncensored",
-        "system": "Classify the user's mood based on the following song titles into only one of these emotions: Happy, Sad, Angry. Only include the classification as one word.",
-        "prompt": song_prompt,
-        "stream": False
-        })
-    headers = {
-    'Content-Type': 'application/json'
-    }
-
-    print("Getting Sentiment from OLLAMA")
-
-    response = requests.request("POST", os.environ.get("OLLAMA_URI"), headers=headers, data=payload)
-    response = response.json()
-    print(response)
-
-    mood = ""
-    if "happy" in response["response"].lower():
-        mood = "HAPPY"
-    elif "sad" in response["response"].lower():
-        mood = "SAD"
-    elif "angry" in response["response"].lower():
-        mood = "ANGRY"
-
-    if mood == "":
-        return None
+        print("calling ollama")
+        q.put(user_id)
+    mood = result.mood
     
     result = conn.execute(sqlalchemy.text("""
             SELECT link FROM ad_campaigns
@@ -300,7 +273,10 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongResponse:
             return SongResponse(url=ad_link, is_ad=True)
         
         conn.execute(sqlalchemy.text("""
-          INSERT INTO song_history (user_id, song_id) VALUES (:user_id, :song_id)
+          INSERT INTO song_history (user_id, song_id) VALUES (:user_id, :song_id);
+          UPDATE user_moods
+          SET songs_played = songs_played + 1
+          WHERE user_id = :user_id
             """),
             [{
                 "song_id": song_id,

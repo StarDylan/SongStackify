@@ -1,7 +1,7 @@
 from fastapi import FastAPI, exceptions
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.api import users, songs, playlists, ad
+from src.api import users, songs, playlists, ad, ollamarunner
 import json
 import logging
 
@@ -24,6 +24,8 @@ app.include_router(users.router)
 app.include_router(songs.router)
 app.include_router(playlists.router)
 app.include_router(ad.router)
+
+ollamarunner.start_daemon()
 
 @app.exception_handler(exceptions.RequestValidationError)
 @app.exception_handler(ValidationError)
