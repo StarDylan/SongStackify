@@ -1,4 +1,4 @@
-## Queries Explained
+## Queries Optimized
 
 #### Delete User
 
