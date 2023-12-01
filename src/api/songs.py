@@ -3,9 +3,6 @@ from pydantic import BaseModel
 import sqlalchemy
 from src import database as db
 from src.api.ollamarunner import q
-import json
-import requests
-import os
 import random
 
 

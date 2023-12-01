@@ -1,11 +1,8 @@
-from fastapi import APIRouter, Header
-from pydantic import BaseModel
 import sqlalchemy
 from src import database as db
 import json
 import requests
 import os
-import random
 import queue
 import threading
 
