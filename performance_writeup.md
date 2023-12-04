@@ -1,4 +1,37 @@
-## Queries Optimized
+## Fake Data Modeling
+
+Fake data was create with [fake_data_generator.py](fake_data_generator.py).
+
+The script is hardcoded to create 3000 playlists, it then uses the defined ratios to generate the users with randomly assigned playlists.
+
+Using real data from Spotify, the script creates all the songs that exist in the playlists, and then creates the links to the platform (some are with Spotify, some are with Apple Music, other are with both).
+
+We assume each user will only play songs from their playlist(s) and will play through the full playlist at least a few times.
+
+Total Counts:
+- 3,000 playlists
+- 911 users
+- 77,803 songs
+- 202,899 playlist_songs
+- 3,000 playlist_user_positions
+- 919,039 song_history
+- 85,515 links
+- 2 platforms
+- 100 ad campaigns
+
+Total of 1,292,269 rows in the database.
+
+We think this distribution is pretty realistic as a lot of the data will be song_history. There will also be a relatively limited number
+of platforms, since we need to add those manually.
+
+The rest of the counts are based on real data.
+
+## Pre-Optimization Performance Data
+
+> add data here
+
+
+## Performance Tuning
 
 #### Delete User
 
@@ -34,7 +67,7 @@ WHERE user_id=:user_id
 | Planning Time: 0.241 ms                                                                                              |
 | Execution Time: 67.724 ms                                                                                            |
 
-Woah, thats a really big sequential scan! Lets add an index on `user_id` and see if that helps:
+Woah, thats a really big sequential scan! Lets add an index on `user_id` and see if that helps to reduce the number of rows we need to scan:
 ```sql
 CREATE INDEX song_history_user_id_index ON song_history(user_id);
 ```
@@ -133,3 +166,6 @@ And on the main query:
 
 Yes that did help, from 88.127 ms to 19.472 ms! That's a 78% improvement.
 
+
+## Post-Optimization Performance Data
+> add data here
