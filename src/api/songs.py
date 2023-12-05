@@ -99,7 +99,7 @@ def add_song(add_song: AddSong) -> AddSongResponse:
                                             "url": add_song.link 
                                         }])
         except Exception:
-            return "Link Invalid"
+            return "Link malformed or is not from a supported platform"
         
         return AddSongResponse(authorization_key=result.authorization_key, song_id=result.id)
     
@@ -140,7 +140,7 @@ def add_link(add_song: AddSongLink):
                                         }])
             return "Added Link"
         except Exception:
-            return "Link already exists"
+            return "Link malformed, already exists, or is not from a supported platform"
     
 
 class SongAuthorization(BaseModel):
@@ -225,19 +225,22 @@ class SongResponse(BaseModel):
 def play_song(song_id: int, user_id: str = Header(None)) -> SongResponse:
     """ """
     with db.engine.begin() as conn:
-        query = conn.execute(sqlalchemy.text("""
-            SELECT song_url from songs
-            JOIN links ON links.song_id = songs.id
-            WHERE songs.id = :song_id 
-            AND links.platform_id = (
-                SELECT platform_id FROM users
-                WHERE users.id = :user_id
-            )
-            """),
-            [{
-                "song_id": song_id,
-                "user_id": user_id
-            }]).one_or_none()
+        try:
+            query = conn.execute(sqlalchemy.text("""
+                SELECT song_url from songs
+                JOIN links ON links.song_id = songs.id
+                WHERE songs.id = :song_id 
+                AND links.platform_id = (
+                    SELECT platform_id FROM users
+                    WHERE users.id = :user_id
+                )
+                """),
+                [{
+                    "song_id": song_id,
+                    "user_id": user_id
+                }]).one_or_none()
+        except Exception:
+            return "Invalid user ID or song ID"
         
         if query is None:
             # Figure out what the error is
@@ -250,7 +253,7 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongResponse:
                 }]).one_or_none()
             
             if query is None:
-                return SongResponse(url="Invalid user ID", is_ad=False)
+                return "Invalid user ID"
 
             query = conn.execute(sqlalchemy.text("""
                 SELECT * FROM songs
@@ -261,9 +264,9 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongResponse:
                 }]).one_or_none()
                                                  
             if query is None:
-                return SongResponse(url="Invalid song ID", is_ad=False)
+                return "Invalid song ID"
 
-            return SongResponse(url="Song not available on user's platform", is_ad=False)
+            return "Song not available on user's platform"
         
         ad_link = play_ad_if_needed(conn, user_id)
         if ad_link is not None:

@@ -57,10 +57,13 @@ def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongResponse
     with db.engine.begin() as conn:
 
         # Check if user id is valid
-        user_valid = conn.execute(sqlalchemy.text("""SELECT id FROM users WHERE id = :user_id"""),
-            [{
-                "user_id":user_id
-            }]).scalar_one_or_none()
+        try:
+            user_valid = conn.execute(sqlalchemy.text("""SELECT id FROM users WHERE id = :user_id"""),
+                [{
+                    "user_id":user_id
+                }]).scalar_one_or_none()
+        except Exception:
+            return "Invalid user id"
         
         if not user_valid:
             return "Invalid user id"
@@ -76,6 +79,16 @@ def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongResponse
             }]).one_or_none()
         
         if not position_valid or not position_valid.pos:
+            # check if playlist exists
+            playlist_exists = conn.execute(sqlalchemy.text("""
+                SELECT id FROM playlists WHERE id = :playlist_id
+                """),
+                [{
+                    "playlist_id":playlist_id
+                }]).scalar_one_or_none()
+            if not playlist_exists:
+                return "Invalid playlist id"
+
             first = conn.execute(sqlalchemy.text("""
                 SELECT playlist_songs.id AS pos, playlist_songs.song_id AS current_song_id
                 FROM playlist_songs
