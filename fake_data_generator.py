@@ -67,9 +67,10 @@ file_cnt = 0
 
 with engine.begin() as conn:
     # drop all tables
-    conn.execute(text("""DROP TABLE IF EXISTS users_playlist_position, song_history, ad_campaigns, playlist_songs, links, playlists, users, songs, platforms;"""))
+    conn.execute(text("""DROP TABLE IF EXISTS user_moods, users_playlist_position, song_history, ad_campaigns, playlist_songs, links, playlists, users, songs, platforms;"""))
 
     # Create all dbs
+    # constraint unique_songs unique (song_name, artist, album)
     conn.execute(text("""
                       create table
                         public.platforms (
@@ -183,7 +184,7 @@ with engine.begin() as conn:
 next_song_id = 1
 next_playlist_id = 1
 next_playlist_song_id = 1
-    # iterate through files
+# iterate through files
 for file in files:
     if file_cnt >= number_of_files:
         break
