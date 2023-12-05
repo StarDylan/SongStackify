@@ -1,4 +1,53 @@
-## Queries Optimized
+## Fake Data Modeling
+
+Fake data was create with [fake_data_generator.py](fake_data_generator.py).
+
+The script is hardcoded to create 3000 playlists, it then uses the defined ratios to generate the users with randomly assigned playlists.
+
+Using real data from Spotify, the script creates all the songs that exist in the playlists, and then creates the links to the platform (some are with Spotify, some are with Apple Music, other are with both).
+
+We assume each user will only play songs from their playlist(s) and will play through the full playlist at least a few times.
+
+Total Counts:
+- 3,000 playlists
+- 911 users
+- 77,803 songs
+- 202,899 playlist_songs
+- 3,000 playlist_user_positions
+- 919,039 song_history
+- 85,515 links
+- 2 platforms
+- 100 ad campaigns
+
+Total of 1,292,269 rows in the database.
+
+We think this distribution is pretty realistic as a lot of the data will be song_history. There will also be a relatively limited number
+of platforms, since we need to add those manually.
+
+The rest of the counts are based on real data.
+
+## Pre-Optimization Performance Data
+
+| Route |   Time (ms) |
+| ---------------------------------------- | ------- |
+| /users/create                            | 102.8   |
+| /users/platform (POST)                   | 395.8   |
+| /users/delete/{user_id} (POST)           | 516.8   |
+|                                          |         |
+| /song/get_library/ (GET)                 | 60.2    |
+| /song/add (POST)                         | 100.2   |
+| /song/link/add (POST)                    | 64      |
+| /song/{song_id}/remove (POST)            | 695     |
+| /song/{song_id}/play (GET) (No Ad)       | 208.4   |
+| /song/{song_id}/play (GET) (With Ad)     | <DATA>  |
+|                                          |         |
+| /playlist/create (POST)                  | 70.8    |
+| /playlist/{playlist_id}/songs/add (POST) | 64.8    |
+| /playlist/{playlist_id}/play (GET)       | 25890.4 |
+|                                          |         |
+| /ad/create (POST)                        |         |
+
+## Performance Tuning
 
 #### Delete User
 
@@ -34,7 +83,7 @@ WHERE user_id=:user_id
 | Planning Time: 0.241 ms                                                                                              |
 | Execution Time: 67.724 ms                                                                                            |
 
-Woah, thats a really big sequential scan! Lets add an index on `user_id` and see if that helps:
+Woah, thats a really big sequential scan! Lets add an index on `user_id` and see if that helps to reduce the number of rows we need to scan:
 ```sql
 CREATE INDEX song_history_user_id_index ON song_history(user_id);
 ```
@@ -64,6 +113,7 @@ Much better! Now we can see that the query is using the index we created, and th
 
 Yes it did, from 65.261 ms to 1.217 ms! That's a 98% improvement.
 
+And on the route, we see the performance of delete user go from 219.4ms to 177ms, thats a 19% decrease!
 
 ### Delete Song
 
@@ -133,3 +183,36 @@ And on the main query:
 
 Yes that did help, from 88.127 ms to 19.472 ms! That's a 78% improvement.
 
+And on the route, we see the performance of delete song went from 160ms -> 100.6ms. Great thats a 37.5% decrease.
+
+### Playing a Song with an Ad
+
+This route is a bit trickier, as the main performance drop isn't from a query taking a long time, but an external service call to
+an LLM for mood inference.
+
+We realized that we don't need a perfectly up-to-date mood on the user, if we have a recent mood that is most likely correct. So we chose to call the service asynchronously and cache the result for next time. 
+
+This works amazingly, taking our play playlist route with an ad from 1880ms to 363.8ms. An 80% decrease! And with our play song route it went from 14734ms to 102.8ms, a 99% decrease!
+
+## Post-Optimization Performance Data
+| Routes                                     | Time (ms) |
+| ------------------------------------------ | --------- |
+| /users/create                              | 115.6     |
+| /users/platform (POST)                     | 178.4     |
+| /users/delete/{user_id} (POST)             | 177       |
+|                                            |           |
+| /song/get_library/ (GET)                   | 66.4      |
+| /song/add (POST)                           | 83.2      |
+| /song/link/add (POST)                      | 90        |
+| /song/{song_id}/remove (POST)              | 100.6     |
+| /song/{song_id}/play (GET) w/o Ad          | 97        |
+| /song/{song_id}/play (GET) w Ad            | 102.8     |
+|                                            |           |
+| /playlist/create (POST)                    | 80.4      |
+| /playlist/{playlist_id}/songs/add (POST)   | 82        |
+| /playlist/{playlist_id}/play (GET) w/o Ad  | 360       |
+| /playlist/{playlist_id}/play (GET) (w/ Ad) | 363.8     |
+|                                            |           |
+| /ad/create (POST)                          | 73.8      |
+
+We believe these times are pretty good, as we no longer have any large waits for external service calls. Everything takes an acceptable amount of time (<0.5s for all calls).

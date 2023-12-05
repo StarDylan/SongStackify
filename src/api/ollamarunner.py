@@ -65,37 +65,36 @@ def gen_mood(user_id) -> str:
 def thread_func(jobs=queue.Queue):
     print("ollama runner daemon started...")
     while True:
-        if not jobs.empty():
-            # there is a job
-            user_id = jobs.get()
+        # there is a job
+        user_id = jobs.get()
+        with db.engine.begin() as conn:
+            result = conn.execute(sqlalchemy.text("""
+                SELECT COUNT(*)
+                FROM song_history
+                WHERE user_id = :user_id
+                                                    """),
+                [{
+                    "user_id":user_id
+                }]).scalar_one_or_none()
+        if result is None or result < 5:
+            continue
+        else:
+            mood = gen_mood(user_id)
             with db.engine.begin() as conn:
-                result = conn.execute(sqlalchemy.text("""
-                    SELECT COUNT(*)
-                    FROM song_history
-                    WHERE user_id = :user_id
-                                                      """),
-                    [{
-                        "user_id":user_id
-                    }]).scalar_one_or_none()
-            if result is None or result < 5:
-                continue
-            else:
-                mood = gen_mood(user_id)
-                with db.engine.begin() as conn:
-                    conn.execute(sqlalchemy.text("""
-                    INSERT INTO user_moods(mood, songs_played,user_id)
-                    VALUES(:mood, 0, :user_id)
-                    ON CONFLICT (user_id)
-                    DO UPDATE SET 
-                        last_updated=now(), 
-                        mood=:mood, 
-                        songs_played=0
-                    WHERE user_moods.user_id = :user_id
-                                                    """
-                                                        ), [{
-                        "user_id": user_id,
-                        "mood":mood
-                    }])
+                conn.execute(sqlalchemy.text("""
+                INSERT INTO user_moods(mood, songs_played,user_id)
+                VALUES(:mood, 0, :user_id)
+                ON CONFLICT (user_id)
+                DO UPDATE SET 
+                    last_updated=now(), 
+                    mood=:mood, 
+                    songs_played=0
+                WHERE user_moods.user_id = :user_id
+                                                """
+                                                    ), [{
+                    "user_id": user_id,
+                    "mood":mood
+                }])
                 
 def start_daemon():
     t = threading.Thread(daemon=True, target=thread_func, args=(q,))
