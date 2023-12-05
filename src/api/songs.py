@@ -82,7 +82,7 @@ def add_song(add_song: AddSong) -> AddSongResponse:
                                         "album": add_song.album,
                                         "artist": add_song.artist
                                     }]).one()
-        # TODO error handle
+        # No Error handling necessary, duplicate songs are fine
         try: 
             connection.execute(sqlalchemy.text("""
                                             INSERT INTO links (song_id,song_url, platform_id)

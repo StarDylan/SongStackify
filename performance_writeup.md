@@ -113,6 +113,7 @@ Much better! Now we can see that the query is using the index we created, and th
 
 Yes it did, from 65.261 ms to 1.217 ms! That's a 98% improvement.
 
+And on the route, we see the performance of delete user go from 219.4ms to 177ms, thats a 19% decrease!
 
 ### Delete Song
 
@@ -182,6 +183,36 @@ And on the main query:
 
 Yes that did help, from 88.127 ms to 19.472 ms! That's a 78% improvement.
 
+And on the route, we see the performance of delete song went from 160ms -> 100.6ms. Great thats a 37.5% decrease.
+
+### Playing a Song with an Ad
+
+This route is a bit trickier, as the main performance drop isn't from a query taking a long time, but an external service call to
+an LLM for mood inference.
+
+We realized that we don't need a perfectly up-to-date mood on the user, if we have a recent mood that is most likely correct. So we chose to call the service asynchronously and cache the result for next time. 
+
+This works amazingly, taking our play playlist route with an ad from 1880ms to 363.8ms. An 80% decrease! And with our play song route it went from 14734ms to 102.8ms, a 99% decrease!
 
 ## Post-Optimization Performance Data
-> add data here
+| Routes                                     | Time (ms) |
+| ------------------------------------------ | --------- |
+| /users/create                              | 115.6     |
+| /users/platform (POST)                     | 178.4     |
+| /users/delete/{user_id} (POST)             | 177       |
+|                                            |           |
+| /song/get_library/ (GET)                   | 66.4      |
+| /song/add (POST)                           | 83.2      |
+| /song/link/add (POST)                      | 90        |
+| /song/{song_id}/remove (POST)              | 100.6     |
+| /song/{song_id}/play (GET) w/o Ad          | 97        |
+| /song/{song_id}/play (GET) w Ad            | 102.8     |
+|                                            |           |
+| /playlist/create (POST)                    | 80.4      |
+| /playlist/{playlist_id}/songs/add (POST)   | 82        |
+| /playlist/{playlist_id}/play (GET) w/o Ad  | 360       |
+| /playlist/{playlist_id}/play (GET) (w/ Ad) | 363.8     |
+|                                            |           |
+| /ad/create (POST)                          | 73.8      |
+
+We believe these times are pretty good, as we no longer have any large waits for external service calls. Everything takes an acceptable amount of time (<0.5s for all calls).
