@@ -28,8 +28,23 @@ The rest of the counts are based on real data.
 
 ## Pre-Optimization Performance Data
 
-> add data here
-
+| Route |   Time (ms) |
+| ---------------------------------------- | ------- |
+| /users/create                            | 102.8   |
+| /users/platform (POST)                   | 395.8   |
+| /users/delete/{user_id} (POST)           | 516.8   |
+|                                          |         |
+| /song/get_library/ (GET)                 | 60.2    |
+| /song/add (POST)                         | 100.2   |
+| /song/link/add (POST)                    | 64      |
+| /song/{song_id}/remove (POST)            | 695     |
+| /song/{song_id}/play (GET)               | 208.4   |
+|                                          |         |
+| /playlist/create (POST)                  | 70.8    |
+| /playlist/{playlist_id}/songs/add (POST) | 64.8    |
+| /playlist/{playlist_id}/play (GET)       | 25890.4 |
+|                                          |         |
+| /ad/create (POST)                        |         |
 
 ## Performance Tuning
 
