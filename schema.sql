@@ -16,6 +16,7 @@ create table
     album text not null,
     authorization_key text not null default substr(md5((random())::text), 0, 25),
     constraint songs_pkey primary key (id)
+    constraint unique_songs unique (song_name, artist, album)
   ) tablespace pg_default;
 
 create table
