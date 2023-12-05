@@ -38,7 +38,8 @@ The rest of the counts are based on real data.
 | /song/add (POST)                         | 100.2   |
 | /song/link/add (POST)                    | 64      |
 | /song/{song_id}/remove (POST)            | 695     |
-| /song/{song_id}/play (GET)               | 208.4   |
+| /song/{song_id}/play (GET) (No Ad)       | 208.4   |
+| /song/{song_id}/play (GET) (With Ad)     | <DATA>  |
 |                                          |         |
 | /playlist/create (POST)                  | 70.8    |
 | /playlist/{playlist_id}/songs/add (POST) | 64.8    |
