@@ -51,7 +51,19 @@ Add song to the song library. Each song should be a unique version.
     }
 ]
 ```
-## Delete Song - `/song/{song_id}/remove` (POST)
+## Search Song - `/song/search/{query}` (GET)
+
+Searching song name and artist for the given query.
+
+**Request**:
+
+```json
+{
+    "query": "string", /* Any search query, is wildcarded front and back */
+    "page": "int" /* page number, starting from 0 */
+}
+```
+## Search Song - `/song/{song_id}/remove` (POST)
 
 Remove song from the song library.
 
@@ -64,6 +76,7 @@ Remove song from the song library.
     }
 ]
 ```
+
 ## Play Song - `/song/{song_id}/play` (GET) (*COMPLEX*)
 Returns a URL to play the given song corespronging to the song_id. May play an ad.
 
