@@ -51,20 +51,24 @@ def add_song_to_playlist(playlist_id: int, song: Song):
     return "Success"
 
 @router.get("/{playlist_id}/play")
-def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongResponse:
+def play_playlist(playlist_id: int, user_id: int = Header(None)) -> SongResponse:
     """ Will skip songs not in playlist """
+
+    if user_id > 9_223_372_036_854_775_807:
+        return "User ID is too large"
+    
+    if playlist_id > 9_223_372_036_854_775_807:
+        return "Playlist ID is too large"
+    
 
     with db.engine.begin() as conn:
 
         # Check if user id is valid
-        try:
-            user_valid = conn.execute(sqlalchemy.text("""SELECT id FROM users WHERE id = :user_id"""),
-                [{
-                    "user_id":user_id
-                }]).scalar_one_or_none()
-        except Exception:
-            return "Invalid user id"
-        
+        user_valid = conn.execute(sqlalchemy.text("""SELECT id FROM users WHERE id = :user_id"""),
+            [{
+                "user_id":user_id
+            }]).scalar_one_or_none()
+    
         if not user_valid:
             return "Invalid user id"
 

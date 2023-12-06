@@ -288,6 +288,11 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongResponse:
 @router.get("/search/{query}")
 def search_song(query: str, page: int=0) -> list:
     library = []
+
+    if page > 9_223_372_036_854_775_807:
+        return "Page is too large"
+    if page < 0:
+        return "Page must be positive or 0"
     
     with db.engine.begin() as conn:
         library_result = conn.execute(sqlalchemy.text("""
