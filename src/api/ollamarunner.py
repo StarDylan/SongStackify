@@ -30,15 +30,16 @@ def gen_mood(user_id) -> str:
                 LIMIT 5
                 """)).all()
     
-    song_prompt = "Songs:\n"
+    song_prompt = "Classify the user's mood based on song titles into only one of these emotions: Sad, Happy, Angry. The response should be the most likely mood as one word. \n\n#### Songs\n"
     for song in result:
         song_prompt += song.song_name + " by " + song.artist + "\n"
 
     payload = json.dumps({
         "model": "llama2-uncensored",
-        "system": "Classify the user's mood based on the following song titles into only one of these emotions: Happy, Sad, Angry. Only include the classification as one word.",
         "prompt": song_prompt,
-        "stream": False
+        "stream": False,
+        "temperature": 0,
+        "template": "{{ .System }}\n\n### HUMAN:\n{{ .Prompt }}\n\n### RESPONSE:\nThe most likely mood is "
         })
     headers = {
     'Content-Type': 'application/json'
