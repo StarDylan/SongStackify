@@ -188,7 +188,8 @@ def play_playlist(playlist_id: int, user_id: str = Header(None)) -> SongResponse
                 }])
 
             response = play_song(next_song_info.current_song_id, user_id=user_id)
-            if response.is_ad:
+            
+            if hasattr(response, "is_ad") and response.is_ad:
                 # Rollback position change
                 conn.rollback()
                 
