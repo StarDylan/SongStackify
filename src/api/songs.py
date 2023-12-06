@@ -282,4 +282,57 @@ def play_song(song_id: int, user_id: str = Header(None)) -> SongResponse:
         
         return SongResponse(url=query.song_url, is_ad=False)
 
-
+@router.get("/search/{query}")
+def search_song(query: str, page: int=0) -> list:
+    library = []
+    
+    with db.engine.begin() as conn:
+        library_result = conn.execute(sqlalchemy.text("""
+            SELECT id, song_name, artist, album
+            FROM songs
+            WHERE 
+                song_name like :query
+            OR artist like :query
+            LIMIT 10
+            OFFSET :offset
+                                             """),
+            [{
+                "query":query + "%",
+                "offset":page*10
+            }])
+    for song in library_result:
+        library.append(
+            {
+                "Song_Id": song.id,
+                "Song_Name": song.song_name,
+                "Artist": song.artist,
+                "Album": song.album
+            }
+        )
+    if len(library) < 10:
+        library = []
+        with db.engine.begin() as conn:
+            library_result = conn.execute(sqlalchemy.text("""
+                SELECT id, song_name, artist, album
+                FROM songs
+                WHERE 
+                    song_name like :query
+                    OR artist like :query
+                LIMIT 10
+                OFFSET :offset
+                                                """),
+                [{
+                    "query": "%" + query + "%",
+                    "offset": page*10
+                }])
+        
+        for song in library_result:
+            library.append(
+                {
+                    "Song_Id": song.id,
+                    "Song_Name": song.song_name,
+                    "Artist": song.artist,
+                    "Album": song.album
+                }
+            )
+    return library
