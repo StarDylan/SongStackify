@@ -59,7 +59,7 @@ class Platform(BaseModel):
 def set_platform(user_id: int, password: PasswordRequest, platform: str):
     """ """
     if not validatePassword(user_id, password.password):
-        return "Incorrect Password"
+        return "Incorrect Password or user does not exist"
 
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("""
